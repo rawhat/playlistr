@@ -1,0 +1,71 @@
+html {
+  height: 100%;
+}
+
+body {
+  padding-top: 70px;
+  height: 100%;
+}
+
+audio {
+  padding-bottom: 25px;
+  width: 50%;
+}
+
+header {
+  text-align: center;
+  padding-bottom: 10px;
+  border-bottom: 1px solid grey;
+}
+
+.navbar-nav > li > a {
+  padding-top: 10px !important;
+  padding-bottom: 10px !important;
+}
+
+.navbar {
+  min-height: 40px !important;
+}
+
+div#playlist_sidebar {
+  width: 20%;
+  float: left;
+  padding: 10px;
+  /*overflow: hidden;
+  position: relative;*/
+  border-right: 1px solid grey;
+}
+
+div#main_panel{
+  width: 80%;
+  float: right;
+  padding: 10px;
+  position: relative;
+}
+
+div#playlist_sidebar{
+  bottom: 0;
+}
+
+div#create_playlist_button_area {
+  padding-bottom: 10px;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-button:start:decrement,
+::-webkit-scrollbar-button:start:decrement {
+  display: none;
+}
+
+::-webkit-scrollbar-track-piece {
+    background-color: #3b3b3b;
+    -webkit-border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #ccc;
+}

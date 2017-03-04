@@ -1,0 +1,29 @@
+{% if len(playlist) is not 0 %}
+      <!--<center><a href="" id="go_live"><span class="glyphicon glyphicon-record"> Go Live</span></a></center>
+      <div class="clearfix"></div>-->
+      <a href="" id="play_playlist"><span class="glyphicon glyphicon-play"></span></a>
+  {% for song in playlist %}
+      <div class="panel panel-default">
+        <div class="panel-heading accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#collapseOne">
+          <h4 class="panel-title pull-left">
+              <!--<a href="" class="play-button" id="{{ song.properties['url'] }}"><span class="glyphicon glyphicon-play"></span></a>-->
+              {{ song.properties['info'] }}
+          </h4>
+          <div class="clearfix"></div>
+        </div>
+        <div id="collapseOne" class="panel-collapse collapse in">
+            <ul class="list-group">
+              <li class="list-group-item">
+                <span class="pull-right">{{ song.properties['length'] }}</span>
+                <div class="clearfix"></div>
+              </li>
+            </ul>
+            <div class="clearfix"></div>
+          </div>
+        </div>
+  {% end %}
+{% else %}
+  <div class="panel panel-default">
+    No songs have been added yet.  Add some below to start listening!
+  </div>
+{% end %}

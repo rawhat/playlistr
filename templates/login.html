@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <script src="scripts/jquery-1.12.0.min.js"></script>
+    <script src="scripts/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <title>{{ title }}</title>
+    <script>
+        $(document).ready(function(){
+            $('#signup').click(function(event){
+                $('#message_area').hide();
+                event.preventDefault();
+                $.ajax({
+                    method: "PUT",
+                    url: "/login",
+                    data: {username: $('#email').val(), password: $('#password').val() },
+                    statusCode: {
+                      409: function(){
+                          $('#message_area').show().removeClass().addClass('alert alert-warning');
+                          $('#message_area').html("User already exists.");
+                      }
+                    }
+                }).done(function(){
+                    window.location.replace('/');
+                });
+            });
+
+            $('#login').click(function(event){
+                $('#message_area').hide();
+                event.preventDefault();
+                $.ajax({
+                    method: "POST",
+                    url: "/login",
+                    data: {username: $('#email').val(), password: $('#password').val() },
+                    statusCode: {
+                      401: function(){
+                          $('#message_area').show().removeClass().addClass('alert alert-danger');
+                          $('#message_area').html('Username or password invalid.');
+                      }
+                    }
+                }).done(function(){
+                    window.location.replace('/');
+                });
+            });
+
+
+        });
+    </script>
+  </head>
+
+  <body>
+    <center>
+        <div class="well" style="width: 35%; height=10%">
+            <form>
+              <div class="form-group">
+                <input type="email" class="form-control" id="email" placeholder="Email" required>
+              </div>
+              <div class="form-group">
+                <input type="password" class="form-control" id="password" placeholder="Password" required>
+              </div>
+                <br>
+                <button class="btn btn-default" id="login">Login</button>
+                <button class="btn btn-default" id="signup">Sign Up</button>
+            </form>
+            <div id="message_area"></div>
+        </div>
+    </center>
+  </body>
+</html>
