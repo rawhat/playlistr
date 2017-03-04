@@ -26,7 +26,7 @@ def buildPlaylists():
     while (yield playlists.fetch_next()):
         playlist = yield playlists.next()
         print(playlist['title'])
-        playlistManager.addExistingPlaylist(playlists)
+        playlistManager.addExistingPlaylist(playlist)
 
 
 def setup_db():
