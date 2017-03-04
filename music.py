@@ -4,62 +4,144 @@ import os
 from multiprocessing import Process, Lock
 import time, math
 from functools import reduce
-from py2neo import Node, Relationship, Graph
+import rethinkdb as r
 import tornado.gen
 
-db = Graph("https://neo4j:password@localhost:7473/db/data")
+r.set_loop_type('tornado')
 
 class Song:
     def __init__(self, info, url, length, streamUrl):
-        self.song = Node('Song', info=info, url=url, length=length, streamUrl=streamUrl)
+        self.info = info
+        self.url = url
+        self.length = length
+        self.streamUrl = streamUrl
 
     def __str__(self):
-        return "\"" + self.song.properties['info'] + "\"" + " : " + str(self.song.properties['length']) + " -- " + self.song.properties['url']
+        return "\"" + self.info + "\"" + " : " + str(self.length) + " -- " + self.url
+
+    @tornado.gen.coroutine
+    def create(self):
+        try:
+            conn = yield r.connect('localhost', 28015)
+            yield r.db('Playlistr').table('songs').insert({
+                "info": self.info,
+                "url": self.url,
+                "length": self.length,
+                "streamUrl": self.streamUrl
+            }).run(conn)
+            return True
+        except:
+            return False
 
 class Playlist:
     def __init__(self, title, category, password="", openSubmissions=True):
-        self.playlist = Node('Playlist', title=title, category=category, password=password, openSubmissions=openSubmissions)
+        self.title = title
+        self.category = category
+        self.password = password
+        self.openSubmissions = openSubmissions
         self.length=0
         self.currentTime=0
         self.isPaused=True
-        self.currentSongIndex = 1
+        self.currentSongIndex = 0
+        self.songs = []
 
+    @tornado.gen.coroutine
     def addSong(self, song):
-        db.merge_one(song)
-        numSongs = sum(1 for _ in db.match(start_node=self.playlist, rel_type='HAS'))
-        db.create_unique(Relationship.cast(self.playlist, 'HAS', song, index=numSongs+1))
+        conn = yield r.connect('localhost', 28015)
+        yield r.db('Playlistr').table('playlists').filter({'title': self.title}).update({
+            'songs': r.row['songs'].append(song.url)
+        }).run(conn)
+        conn.close()
         self.updateLength()
 
+    @tornado.gen.coroutine
     def removeSong(self, song):
-        db.delete(db.match_one(start_node=self.playlist, rel_type="HAS", end_node=song), song)
+        conn = yield r.connect('localhost', 28015)
+        songs = getSongs()
+        index = 0
+        while songs[index] != song.url:
+            index = index + 1
+        yield r.db('Playlistr').table('playlists').get(self.title, index='title').update(
+            lambda playlist: { 'songs': playlist['songs'].delete_at(index) }
+        ).run(conn)
+        conn.close()
 
+    @tornado.gen.coroutine
     def getSongs(self):
-        sortedSongs = sorted([(song_rel.properties['index'], song_rel.end_node) for song_rel in db.match(start_node=self.playlist, rel_type='HAS')], key=lambda item: int(item[0]))
-        return [song[1] for song in sortedSongs]
+        conn = yield r.connect('localhost', 28015)
+        playlists = yield r.db('Playlistr').table('playlists').get_all(self.title, index='title').run(conn)
+        while (yield playlists.fetch_next()):
+            playlist = yield playlists.next()
+            break
+        these_songs = playlist['songs']
+        songs_from_db = yield r.db('Playlistr').table('songs').filter(
+            lambda song: r.expr(these_songs).contains(song['url'])
+        ).run(conn)
+        songs = []
+        while (yield songs_from_db.fetch_next()):
+            song = yield songs_from_db.next()
+            songs.append(song)
+        conn.close()
+        return songs
 
+    @tornado.gen.coroutine
     def getCurrentSongAndTime(self):
-        songs = self.getSongs()
-        length = songs[0].properties['length']
+        songs = yield self.getSongs()
+        length = float(songs[0]['length'])
         if length >= self.currentTime:
             return (songs[0], self.currentTime)
 
         for song in songs:
-            if length >= self.currentTime:
-                timeToCurrentSong = sum(song.properties['length'] for song in songs[:songs.index(song)])
+            timeToCurrentSong = sum(float(song['length']) for song in songs[:songs.index(song)])
+            if length >= self.currentTime and (timeToCurrentSong + song['length'] - self.currentTime) > 2:
                 self.currentSongIndex = songs.index(song)
                 return (songs[songs.index(song)], self.currentTime - timeToCurrentSong)
-            length = length + song.properties['length']
+            length = length + song['length']
 
+    @tornado.gen.coroutine
+    def getCurrentSongIndex(self):
+        songs = yield self.getSongs()
+        length = songs[0]['length']
+        if length >= self.currentTime:
+            return 0
+
+        for song in songs:
+            if length >= self.currentTime:
+                return songs.index(song)
+            length = length + song['length']
+
+    @tornado.gen.coroutine
     def getNextSong(self):
-        songs = db.match(start_node=self.playlist, rel_type='HAS')
-        for rel in songs:
-            if rel.properties['index'] == self.currentSongIndex + 1:
-                self.currentSongIndex = self.currentSongIndex + 1
-                return rel.end_node
+        try:
+            songs = yield self.getSongs()
+            index = 0
+            nextSongIndex = 1
+            for song in songs:
+            #    if index == nextSongIndex:
+            #        return song
+                print(song)
+            return {}
+            '''
+            index = 0
+            songIndex = 0
+            nextSongIndex = songIndex + 1
+            songs = yield self.getSongs()
+            for song in songs:
+                if index == nextSongIndex:
+                    return song
+                index = index + 1
+            return None
+            '''
+        except:
+            print(sys.exc_info())
+            print('error in next!')
 
+    @tornado.gen.coroutine
     def updateLength(self):
         try:
-            self.length = reduce(lambda song1, song2: song1 + song2, (song.end_node.properties['length'] for song in db.match(start_node=self.playlist, rel_type="HAS")))
+            conn = r.connect('localhost', 28015)
+            songs = yield self.getSongs()
+            self.length = reduce(lambda song1, song2: song1 + song2, (song['length'] for song in songs))
         except:
             self.length = 0
 
@@ -69,12 +151,12 @@ class Playlist:
 
         songIndex = -1
         for s in songs:
-            if s.properties['url'] == song.properties['url']:
+            if s['url'] == song['url']:
                 songIndex = songs.index(s)
                 break
 
         for i in range(0, songIndex):
-            length = length + int(songs[i].properties['length'])
+            length = length + int(songs[i]['length'])
         print(length)
         self.currentTime = length
 
@@ -91,15 +173,24 @@ class PlaylistManager:
     def __init__(self):
         self.playlists = {}
 
+    @tornado.gen.coroutine
     def addPlaylist(self, playlist):
-        self.playlists[playlist.playlist.properties['title']] = playlist
-        db.create(playlist.playlist)
-        db.push()
+        try:
+            self.playlists[playlist.title] = playlist
+            conn = yield r.connect('localhost', 28015)
+            yield r.db('Playlistr').table('playlists').insert({
+                'title': playlist.title,
+                'category': playlist.category,
+                'openSubmissions': playlist.openSubmissions,
+                'password': playlist.password,
+                'songs': []
+            }).run(conn)
+        except:
+            return False
 
     def addExistingPlaylist(self, playlist):
-        self.playlists[playlist.properties['title']] = Playlist(playlist.properties['title'], playlist.properties['category'], playlist.properties['password'], playlist.properties['openSubmissions'])
-        self.playlists[playlist.properties['title']].playlist = playlist
-        self.playlists[playlist.properties['title']].updateLength()
+        self.playlists[playlist['title']] = Playlist(playlist['title'], playlist['category'], playlist['password'], playlist['openSubmissions'])
+        self.playlists[playlist['title']].updateLength()
 
     def startPlaylist(self, playlistTitle, song=None):
         if not song:
