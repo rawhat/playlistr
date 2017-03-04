@@ -233,27 +233,28 @@ class MainPage extends React.Component {
 				<div id='top-section'>
 					<NavBar signoutCallback={this.signoutCallback} />
 					<div className='row'>
-						<div className='col m3'>
+						<div className='col-md-3'>
 							{addSongArea}
 						</div>
-						<div className='col m6'>
+						<div className='col-md-6'>
 							{audioBar}
 						</div>
 					</div>
 					<div className='row'>
-						<div className='col m3' style={{paddingLeft: 50}}>
+						<div className='col-md-3' style={{paddingLeft: 50}}>
 							<PlaylistSidebar playlistSelector={this.selectPlaylist} playlists={this.state.playlists} selectedPlaylistIndex={selectedPlaylistIndex} />
 						</div>
-						<div className='col m9'>
+						<div className='col-md-9'>
 							<div id='playlist_area' style={{marginRight: 50}}>
 								<div className='row' style={{marginLeft: 0, marginRight: 0, paddingBottom: 10}}>
-									<div className='left'>
+									<div className='pull-left'>
 										{goLiveLink}
 									</div>
-									<div className='right'>
+									<div className='pull-right'>
 										{exportPlaylistLink}
 									</div>
 								</div>
+								<div className='clearfix'></div>
 								{contentSection}
 							</div>
 						</div>
@@ -268,8 +269,8 @@ class MainPage extends React.Component {
 class NavBar extends React.Component {
 	render = () => {
 		return(
-			<nav>
-				<div className="nav-wrapper">
+			<navbar className="navbar navbar-default navbar-fixed-top">
+				<div className="container-fluid">
 					<div className="navbar-header navbar-left">
 						<a className="navbar-brand" href="#">Playlistr</a>
 					</div>
@@ -286,7 +287,7 @@ class NavBar extends React.Component {
 						</ul>
 					</div>
 				</div>
-			</nav>
+			</navbar>
 		);
 	}
 }
@@ -319,7 +320,7 @@ class AddSongArea extends React.Component {
 
 	render = () => {
         return(
-			<div className='input-field' style={{width: '50%', margin: '10px auto'}}>
+			<div className='input-group' style={{width: '50%', margin: '10px auto'}}>
 				<input className='form-control' ref='songUrl' type='text' placeholder='Add song to current playlist' onChange={this.onChange} />
 				<span className='input-group-btn'>
 					<button className='btn btn-default' ref='addSong' onClick={this.addSong}>+</button>
@@ -403,7 +404,7 @@ class CustomAudioBar extends React.Component {
 		var width = 0;
 		if(this.refs.audioPlayerHidden !== undefined){
 			glyphicon_class += this.refs.audioPlayerHidden.paused ? "play" : "pause";
-			var button = <button className='btn left' onClick={this.togglePlay}>
+			var button = <button className='btn btn-default pull-left' onClick={this.togglePlay}>
 							<span className={glyphicon_class}></span>
 						</button>;
 
@@ -567,10 +568,10 @@ class VideoPlayer extends React.Component {
 				>
 				</video>
 				<div className='row' style={{marginBottom: 10}}>
-					<div className='col s1' style={{display: 'inline', width: '10%'}}>
-						<button onClick={this.rewindVideo.bind(null, 30)}className='btn'>{'<<'}</button>
-						<button onClick={this.rewindVideo.bind(null, 15)} className='btn'>{'<'}</button>
-						<button onClick={this.togglePause} className='btn'><span className={'glyphicon glyphicon-' + glyphicon}></span></button>
+					<div className='col-xs-1' style={{display: 'inline', width: '10%'}}>
+						<button onClick={this.rewindVideo.bind(null, 30)}className='btn btn-sm btn-default'>{'<<'}</button>
+						<button onClick={this.rewindVideo.bind(null, 15)} className='btn btn-sm btn-default'>{'<'}</button>
+						<button onClick={this.togglePause} className='btn btn-sm btn-default'><span className={'glyphicon glyphicon-' + glyphicon}></span></button>
 					</div>
 					<div className='col-xs-8'>
 						{progressBar}
@@ -937,7 +938,7 @@ class SongArea extends React.Component {
 SongArea.propTypes = {
 	title: React.PropTypes.string,
 	songs: React.PropTypes.arr,
-	currentSongIndex: React.PropTypes.number
+	currentSongIndex: React.PropTYpes.number
 };
 
 class PlaylistSong extends React.Component {

@@ -3,6 +3,7 @@ html {
 }
 
 body {
+  padding-top: 70px;
   height: 100%;
 }
 
@@ -35,6 +36,11 @@ div#playlist_sidebar {
   border-right: 1px solid grey;
 }
 
+.row {
+  margin-left: 0px;
+  margin-right: 0px;
+}
+
 div#main_panel{
   width: 80%;
   float: right;
@@ -48,6 +54,62 @@ div#playlist_sidebar{
 
 div#create_playlist_button_area {
   padding-bottom: 10px;
+}
+
+.sidebar-col {
+  padding-left: 50px;
+}
+
+#playlist-area {
+  margin-right: 50px;
+}
+
+#playlist-area > .row {
+  padding-bottom: 10px;
+}
+
+.add-song-input {
+  width: 50%;
+  margin: 10px auto;
+}
+
+.create-playlist-button {
+  width: 80%;
+  position: relative;
+}
+
+.playlist-modal {
+  position: relative;
+  text-align: center;
+}
+
+.close-playlist-form {
+  cursor: pointer;
+  margin-bottom: 5px;
+}
+
+.playlist-form {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  top: 0;
+  width: 25%;
+  margin: auto;
+  height: 325px;
+  padding: 20px;
+  background-color: lightgray;
+  border: 1px solid darkgray;
+  border-radius: 5px;
+  z-index: 999;
+}
+
+.type-radio {
+  margin-bottom: 5px;
+}
+
+.playlist-span .selected {
+  background-color: cornflowerblue;
 }
 
 ::-webkit-scrollbar {

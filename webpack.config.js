@@ -1,18 +1,19 @@
+var webpack = require('webpack');
+
 module.exports = {
-	entry: './src/main-page.js',
-	output: {
-		path: './static/js',
-		filename: '[name].min.js'
-	},
-	module: {
-		loaders: [
-			{
-				exclude: /node_modules/,
-				loader: 'babel',
-				query: {
-					presets: ['es2015', 'stage-0', 'react']
-				}
-			}
-		]
-	}
+  entry: './src/app.js',
+  output: {
+    path: __dirname + '/static/js',
+    filename: 'app.min.js'
+  },
+  module: {
+    loaders: [{
+      test: /\.elm$/,
+      exclude: [/elm-stuff/, /node_modules/],
+      loader: 'elm-webpack'
+    }]
+  },
+  plugins: [
+    new webpack.optimize.UglifyJsPlugin()
+  ]
 };

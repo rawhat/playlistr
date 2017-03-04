@@ -81,6 +81,12 @@ app.use(bodyParser.urlencoded({ extended: true }));
 var expressWs = require('express-ws')(app);
 app = expressWs.app;
 
+app.use(function(req, res, next) {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  next();
+});
+
 /*
 // LoginHandler
 app.use('/login', (req, res) => {
@@ -117,9 +123,11 @@ app.get('/song', (req, res) => {
 	});
 });
 
-app.put('/song', (req, res) => {
+app.post('/song/new', (req, res) => {
 	var title = req.body.playlist;
-	var type = req.body.type;
+	//var type = req.body.type;
+	var playlist = manager.getPlaylist(title);
+	let type = playlist.playlistType;
 	var songUrl = req.body.songUrl;
 	var callback = response => {
 		if(response === null){
@@ -127,9 +135,7 @@ app.put('/song', (req, res) => {
 			res.end();
 		}
 		else{
-			var playlist = manager.getPlaylist(title);
-
-			var isVideo = playlist.type === 'video' ? true : false;
+			var isVideo = type === 'video' ? true : false;
 
 			var song = new Song(response.title, isVideo, response.url, response.length, response.streamUrl);
 			song.create(status => {
@@ -224,13 +230,15 @@ app.get('/playlist', (req, res) => {
 				results.toArray((err, playlists) => {
 					if(playlists.length !== 0)
 						playlists = _.orderBy(playlists, playlist => { return playlist.title; }, 'desc');
+					res.setHeader('Content-Type', 'application/json');
 					res.json({'playlists': playlists});
 				});
 			});
 		});
 	}
 });
-app.put('/playlist', (req, res) => {
+app.post('/playlist/create', (req, res) => {
+	console.log(req.body);
 	var title = req.body.playlist;
 	var category = req.body.category;
 	var password = req.body.password;
@@ -261,13 +269,14 @@ var playlistSubscribers = {};
 
 // PlaylistSocketHandler
 app.ws('/playlist/socket', function(ws) {
+	console.log('connected!');
 	ws.on('connection', function() {
 		allSubscribers = _.uniq(_.concat(allSubscribers, this));
-		//console.log(allSubscribers);
+		console.log(allSubscribers);
 	});
 
 	ws.on('message', function(message) {
-		//console.log(message);
+		// console.log(message);
 		var msg = JSON.parse(message);
 		if(msg.new_playlist){
 			playlistSubscribers[msg.new_playlist] = playlistSubscribers[msg.new_playlist] === undefined ? [ws] : _.concat(playlistSubscribers[msg.new_playlist], ws);
@@ -281,7 +290,7 @@ app.ws('/playlist/socket', function(ws) {
 		allSubscribers = _.without(allSubscribers, ws);
 		//console.log(allSubscribers);
 	});
-	
+
 	allSubscribers = _.uniq(_.concat(allSubscribers, ws));
 });
 
@@ -306,14 +315,14 @@ r.connect({host: 'localhost', port: 28015}, (err, conn) => {
 					song.toArray((err, res) => {
 						song = res[0];
 						_.each(playlistSubscribers[new_playlist], subscriber => {
-							subscriber.send(JSON.stringify({song_added: song}));
+							subscriber.send(JSON.stringify({action: 'SONG_ADDED', song_added: song}));
 						});
 					});
 				});
 			}
 			else{
 				_.each(allSubscribers, subscriber => {
-					subscriber.send(JSON.stringify({playlist: change.new_val}));
+					subscriber.send(JSON.stringify({action: 'PLAYLIST_CHANGED', playlist: change.new_val}));
 				});
 			}
 		});

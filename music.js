@@ -8,10 +8,10 @@ var databaseInsert = function(table, obj, callback) {
 		r.db('Playlistr').table(table).insert(obj)
 		 .run(conn, (err, results) => {
 			if(err){
-				throw err;
+				//throw err;
 				callback(false);
 			}
-			callback(true)
+			callback(true);
 		});
 	});
 }
@@ -42,7 +42,7 @@ var Playlist = function(title, category, password="", openSubmissions=true, type
     this.category = category;
     this.password = password;
     this.openSubmissions = openSubmissions;
-    this.type = type;
+    this.playlistType = type;
     this.length = 0;
     this.currentTime = 0;
     this.isPaused = true;
