@@ -16,9 +16,8 @@ playlistSubscribers = {}
 allSubscribers = set()
 playlistManager = PlaylistManager()
 
-#r.set_loop_type('tornado')
+r.set_loop_type('tornado')
 
-'''
 def buildPlaylists():
     print('building...')
     conn = yield r.connect('localhost', 28015)
@@ -28,7 +27,7 @@ def buildPlaylists():
         playlist = yield playlists.next()
         print(playlist['title'])
         playlistManager.addExistingPlaylist(playlists)
-'''
+
 
 def setup_db():
     print('running method')
@@ -43,7 +42,7 @@ def setup_db():
     }).run(conn)
     print('done updating!')
 
-'''
+
 # update stream URLs
 def updateStreamUrls():
     yield r.table('songs').update({
@@ -51,11 +50,9 @@ def updateStreamUrls():
     }).run(conn)
 
 # comment out when not in use
-updateStreamUrls()
+#updateStreamUrls()
 buildPlaylists()
 
-print('done updating!')
-'''
 class BaseHandler(tornado.web.RequestHandler):
     def get_current_user(self):
         user = self.get_secure_cookie('user')
@@ -127,19 +124,24 @@ class PlaylistHandler(tornado.web.RequestHandler):
             try:
                 conn = yield r.connect('localhost', 28015)
                 playlists = yield r.db('Playlistr').table('playlists').run(conn)
-                while (playlists.fetch_next()):
+                while (yield playlists.fetch_next()):
                     playlist = yield playlists.next()
                     playlistManager.addExistingPlaylist(playlist)
-                yield r.db('Playlistr').table('songs').update({
-                    {'streamUrl': pafy.new(r.row['url']).getbestaudio().url }
-                }).run(conn)
+                print('added all playlists')
+                # yield r.db('Playlistr').table('songs').update(lambda song:
+                #     new_url = pafy.new(r.row['url']).getbestaudio().url
+                #     {'streamUrl': new_url }
+                # }).run(conn)
             except:
+                print(sys.exc_info())
                 pass
         playlistName = self.get_argument('playlist', None, True)
 
         if playlistName:
-            playlists = yield playlistManager.getPlaylist(playlistName).getSongs()
-            self.render('./templates/songs.html', playlist=playlists)
+            playlist = playlistManager.getPlaylist(playlistName)
+            songs = yield playlist.getSongs()
+            playlist.songs = songs
+            self.write(tornado.escape.json_encode({'playlist': playlist.__dict__}))
 
         else:
             conn = yield r.connect('localhost', 28015)
@@ -147,9 +149,10 @@ class PlaylistHandler(tornado.web.RequestHandler):
             playlists = []
             while (yield cursor.fetch_next()):
                 playlist = yield cursor.next()
-                playlists.append(playlist['title'])
-            playlists.sort() #sorted(playlists, key = lambda playlist: playlist['title'])
-            self.render('./templates/playlists.html', playlists=playlists)
+                playlists.append(playlist)
+            playlists = sorted(playlists, key = lambda playlist: playlist['title'])
+            #self.render('./templates/playlists.html', playlists=playlists)
+            self.write(tornado.escape.json_encode({'playlists': playlists}))
 
     @tornado.gen.coroutine
     def put(self):
@@ -158,11 +161,14 @@ class PlaylistHandler(tornado.web.RequestHandler):
         password = self.get_body_argument('password')
         openSubmissions = self.get_body_argument('openSubmissions')
         if playlistName:
-            try:
-                playlist = Playlist(playlistName, category, password, openSubmissions)
-                playlistManager.addPlaylist(playlist)
-            except:
+            playlist = Playlist(playlistName, category, password, openSubmissions)
+            response = yield playlistManager.addPlaylist(playlist)
+            if not response:
+                print('response is ' + str(response))
                 raise tornado.web.HTTPError(409)
+            else:
+                print('response is ' + str(response))
+                raise tornado.web.HTTPError(201)
         else:
             raise tornado.web.HTTPError(400)
 
@@ -204,6 +210,7 @@ class PlaylistSocketHandler(tornado.websocket.WebSocketHandler):
 
     def open(self):
         allSubscribers.add(self)
+        #self.write_message('opened')
 
     def close(self):
         if self in allSubscribers:
@@ -211,17 +218,20 @@ class PlaylistSocketHandler(tornado.websocket.WebSocketHandler):
 
     def on_message(self, message):
         msg = tornado.escape.json_decode(message)
-        if msg['new_playlist'] not in playlistSubscribers.keys():
-            playlistSubscribers[msg['new_playlist']] = set()
+        if msg['new_playlist']:
+            if msg['new_playlist'] not in playlistSubscribers.keys():
+                print('new subscriber')
+                playlistSubscribers[msg['new_playlist']] = set()
 
-        if msg['new_playlist'] and self not in playlistSubscribers[msg['new_playlist']]:
-            try:
-                if self in playlistSubscribers[msg['old_playlist']]:
-                    playlistSubscribers[msg['old_playlist']].remove(self)
-            except:
-                pass
+            if msg['new_playlist'] and self not in playlistSubscribers[msg['new_playlist']]:
+                try:
+                    if self in playlistSubscribers[msg['old_playlist']]:
+                        playlistSubscribers[msg['old_playlist']].remove(self)
+                except:
+                    pass
 
             playlistSubscribers[msg['new_playlist']].add(self)
+            print(playlistSubscribers)
 
 class SongHandler(tornado.web.RequestHandler):
     # go live on playlist
@@ -230,16 +240,22 @@ class SongHandler(tornado.web.RequestHandler):
         playlistName = self.get_argument('playlist', None, True)
         playlist = playlistManager.getPlaylist(playlistName)
         song, time = yield playlist.getCurrentSongAndTime()
-        if playlist.isPaused:
-            playlistManager.startPlaylist(playlistName)
-        self.write(tornado.escape.json_encode({'songUrl': song['streamUrl'], 'time': time}))
+        if song is not None:
+            if playlist.isPaused:
+                playlistManager.startPlaylist(playlistName)
+            self.write(tornado.escape.json_encode({'songUrl': song['streamUrl'], 'time': time}))
+        else:
+            self.write(tornado.escape.json_encode({'songUrl': '', 'time': -1}))
 
     def put(self):
         try:
             playlistName = self.get_body_argument('playlist')
-            link = processUrl(self.get_body_argument('songUrl'))
+            print(playlistName)
+            songUrl = self.get_body_argument('songUrl')
+            print(songUrl)
+            link = processUrl(songUrl)
             playlist = playlistManager.getPlaylist(playlistName)
-            song = Song(link['title'], self.get_body_argument('songUrl'), link['length'], link['url'])
+            song = Song(link['title'], songUrl, link['length'], link['url'])
             song.create()
             playlist.addSong(song)
         except:
@@ -262,13 +278,15 @@ class SongHandler(tornado.web.RequestHandler):
 
 class SongNextHandler(tornado.web.RequestHandler):
     # get next song
+    @tornado.gen.coroutine
     def get(self):
         playlistName = self.get_argument('playlist', None, True)
         playlist = playlistManager.getPlaylist(playlistName)
-        yield playlist.getCurrentSongAndTime()
-        if playlist.isPaused:
-            playlistManager.startPlaylist(playlistName)
-        self.write(tornado.escape.json_encode({'songUrl': 'localhost'}))#song['streamUrl']}))
+        song = yield playlist.getNextSong()
+        if song is not None:
+            self.write(tornado.escape.json_encode({'songUrl': song['streamUrl'], 'time': 0}))#song['streamUrl']}))
+        else:
+            self.write(tornado.escape.json_encode({'songUrl': None}));
 
 class UpdateHandler(tornado.web.RequestHandler):
     def get(self):
@@ -281,9 +299,14 @@ class UpdateHandler(tornado.web.RequestHandler):
             raise tornado.web.HTTPError(404)
         '''
 
+class ReactHandler(tornado.web.RequestHandler):
+    def get(self):
+        self.render('./templates/react.html')
+
 def make_app():
     return tornado.web.Application([
         (r"/", MainHandler),
+        (r"/react", ReactHandler),
         (r"/login", LoginHandler),
         (r"/logout", LogoutHandler),
         (r"/update", UpdateHandler),
@@ -292,7 +315,8 @@ def make_app():
         (r"/playlist", PlaylistHandler),
         (r"/playlist/socket", PlaylistSocketHandler),
         (r"/test", TestHandler),
-        (r"/(.*)", tornado.web.StaticFileHandler, {"path": "./static"}),
+        (r"/(.*)", tornado.web.StaticFileHandler, {"path": "./static"})
+        
     ], {
         'template_path': "./templates",
     },  cookie_secret='DimjG2ZcmheiEZ8/UxtS4qtWFTXWEIk4fwRBqvryJKdzHgszofHPfaC7lrgAgkbRmsI=',

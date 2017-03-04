@@ -319,50 +319,51 @@
           </div>
         </div>
       </header>
-  </div>
-
-  <div id="playlist_sidebar">
-    <!-- create playlist modal -->
-    <div id="create_playlist_button_area">
-      <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#newPlaylist">+</button>
     </div>
 
-    <div class="modal fade" id="newPlaylist" tab-index="-1" role="dialog" aria-labelledby="newPlaylistModal">
-      <div class="modal-dialog" role="document">
-        <div class="modal-content">
-          <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span></button>
-            <h4 class="modal-title" id="newPlaylistModal">Create New Playlist</h4>
-          </div>
-          <div class="modal-body">
-            <div class="form-group" id="playlist_form">
-              <input type="text" class="form-control" placeholder="Playlist title" id="playlist_title" required>
-              <input type="text" class="form-control" placeholder="Playlist category" id="playlist_category" required>
+    <div id="playlist_sidebar">
+      <!-- create playlist modal -->
+      <div id="create_playlist_button_area">
+        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#newPlaylist">+</button>
+      </div>
+
+      <div class="modal fade" id="newPlaylist" tab-index="-1" role="dialog" aria-labelledby="newPlaylistModal">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span></button>
+              <h4 class="modal-title" id="newPlaylistModal">Create New Playlist</h4>
             </div>
-              <input type="text" class="form-control" placeholder="Password (leave blank for none)" id="playlist_password">
-              <div class="checkbox">
-                <label>
-                  <input type="checkbox" id="openSubmission" value="option1" aria-label="openSubmission"> Public submissions
-                </label>
+            <div class="modal-body">
+              <div class="form-group" id="playlist_form">
+                <input type="text" class="form-control" placeholder="Playlist title" id="playlist_title" required>
+                <input type="text" class="form-control" placeholder="Playlist category" id="playlist_category" required>
               </div>
-          </div>
-          <div class="modal-footer">
-            <div class="alert alert-warning pull-left" id="playlist_alert" hidden>
+                <input type="text" class="form-control" placeholder="Password (leave blank for none)" id="playlist_password">
+                <div class="checkbox">
+                  <label>
+                    <input type="checkbox" id="openSubmission" value="option1" aria-label="openSubmission"> Public submissions
+                  </label>
+                </div>
             </div>
-            <button type="submit" class="btn btn-primary pull-right" id="create_playlist">Create</button>
-            <div class="clearfix"></div>
+            <div class="modal-footer">
+              <div class="alert alert-warning pull-left" id="playlist_alert" hidden>
+              </div>
+              <button type="submit" class="btn btn-primary pull-right" id="create_playlist">Create</button>
+              <div class="clearfix"></div>
+            </div>
           </div>
         </div>
       </div>
+
+      <div class="list-group" id="playlists-group">
+      </div>
     </div>
 
-    <div class="list-group" id="playlists-group">
-    </div>
-  </div>
+    <div id="main_panel">
+      <div id="playlist_area" hidden>
+      </div>
 
-  <div id="main_panel">
-    <div id="playlist_area" hidden>
     </div>
-  </div>
 </body>
 </html>

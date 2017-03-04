@@ -44,6 +44,7 @@ class Playlist:
         self.isPaused=True
         self.currentSongIndex = 0
         self.songs = []
+        self.hasPlayed = False
 
     @tornado.gen.coroutine
     def addSong(self, song):
@@ -86,17 +87,20 @@ class Playlist:
 
     @tornado.gen.coroutine
     def getCurrentSongAndTime(self):
-        songs = yield self.getSongs()
-        length = float(songs[0]['length'])
-        if length >= self.currentTime:
-            return (songs[0], self.currentTime)
+        if self.currentTime == 0 and self.hasPlayed:
+            return (None, -1)
+        else:
+            songs = yield self.getSongs()
+            length = float(songs[0]['length'])
+            if length >= self.currentTime:
+                return (songs[0], self.currentTime)
 
-        for song in songs:
-            timeToCurrentSong = sum(float(song['length']) for song in songs[:songs.index(song)])
-            if length >= self.currentTime and (timeToCurrentSong + song['length'] - self.currentTime) > 2:
-                self.currentSongIndex = songs.index(song)
-                return (songs[songs.index(song)], self.currentTime - timeToCurrentSong)
-            length = length + song['length']
+            for song in songs:
+                timeToCurrentSong = sum(float(song['length']) for song in songs[:songs.index(song)])
+                if length >= self.currentTime and (timeToCurrentSong + song['length'] - self.currentTime) > 2:
+                    self.currentSongIndex = songs.index(song)
+                    return (songs[songs.index(song)], self.currentTime - timeToCurrentSong)
+                length = length + song['length']           
 
     @tornado.gen.coroutine
     def getCurrentSongIndex(self):
@@ -113,14 +117,18 @@ class Playlist:
     @tornado.gen.coroutine
     def getNextSong(self):
         try:
-            songs = yield self.getSongs()
-            index = 0
-            nextSongIndex = 1
-            for song in songs:
-            #    if index == nextSongIndex:
-            #        return song
-                print(song)
-            return {}
+            if not self.hasPlayed:
+                songs = yield self.getSongs()
+                index = 0
+                nextSongIndex = 1
+                sumTime = 0
+                for song in songs:
+                    if sumTime > self.currentTime:
+                        return song
+                    sumTime += song['length']
+                return songs[len(songs)-1]
+            else:
+                return None
             '''
             index = 0
             songIndex = 0
@@ -167,6 +175,7 @@ class Playlist:
             self.currentTime = self.currentTime + 1.0
             print(str(self.currentTime) + "/" + str(self.length))
         self.isPaused = True
+        self.hasPlayed = True
         self.currentTime = 0
 
 class PlaylistManager:
@@ -176,15 +185,21 @@ class PlaylistManager:
     @tornado.gen.coroutine
     def addPlaylist(self, playlist):
         try:
-            self.playlists[playlist.title] = playlist
-            conn = yield r.connect('localhost', 28015)
-            yield r.db('Playlistr').table('playlists').insert({
-                'title': playlist.title,
-                'category': playlist.category,
-                'openSubmissions': playlist.openSubmissions,
-                'password': playlist.password,
-                'songs': []
-            }).run(conn)
+            if playlist.title not in self.playlists.keys():
+                print('playlist title doesnt exist?')
+                self.playlists[playlist.title] = playlist
+                conn = yield r.connect('localhost', 28015)
+                yield r.db('Playlistr').table('playlists').insert({
+                    'title': playlist.title,
+                    'category': playlist.category,
+                    'openSubmissions': playlist.openSubmissions,
+                    'password': playlist.password,
+                    'songs': []
+                }).run(conn)
+                return True
+            else:
+                print('playlist does exist!')
+                return False
         except:
             return False
 
