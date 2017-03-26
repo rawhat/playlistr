@@ -1,5 +1,6 @@
 html {
   height: 100%;
+  font-family: 'Roboto', sans-serif;
 }
 
 body {
@@ -24,6 +25,22 @@ header {
 
 .navbar {
   min-height: 40px !important;
+}
+
+.left-panel {
+  position: fixed;
+  width: 25%;
+  margin-top: 60px;
+  margin-left: 20px;
+  padding: 20px;
+}
+
+.right-panel {
+  position: absolute;
+  left: 25%;
+  margin-top: 60px;
+  padding: 20px;
+  width: 75%;
 }
 
 div#playlist_sidebar {

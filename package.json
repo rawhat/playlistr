@@ -5,6 +5,7 @@
   "main": "index.js",
   "dependencies": {
     "async": "^2.0.0-rc.5",
+    "axios": "^0.15.3",
     "babel-core": "^6.7.7",
     "babel-eslint": "^6.0.3",
     "babel-loader": "^6.2.4",
@@ -14,24 +15,23 @@
     "babel-preset-stage-0": "^6.5.0",
     "babelify": "^7.2.0",
     "body-parser": "^1.15.1",
-    "browserify": "^13.0.0",
     "eslint": "^2.8.0",
     "eslint-config-es2015-react": "^0.1.2",
     "eslint-plugin-react": "^5.0.1",
     "express": "^4.13.4",
     "express-ws": "^2.0.0-rc.1",
-    "jquery": "^2.2.3",
     "lodash": "^4.14.0",
     "passport": "^0.3.2",
     "pug": "^2.0.0-alpha8",
     "python-shell": "^0.4.0",
     "react": "^15.1.0",
-    "react-bootstrap": "^0.29.1",
+    "react-addons-css-transition-group": "^15.4.2",
+    "react-addons-transition-group": "^15.4.2",
+    "react-bootstrap": "^0.30.8",
     "react-dom": "^15.1.0",
     "rethinkdb": "^2.3.1",
     "webpack": "^1.13.0",
-    "youtube-dl": "^1.11.1",
-    "ytdl": "^0.3.14"
+    "youtube-dl": "^1.11.1"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

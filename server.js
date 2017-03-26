@@ -105,7 +105,7 @@ app.get('/song', (req, res) => {
 	playlist.getCurrentSongAndTime(obj => {
 		var song = obj.song;
 		var time = obj.time;
-		if(song === null){
+		if(!song){
 			res.json({songUrl: '', time: time});
 			res.end();
 		}

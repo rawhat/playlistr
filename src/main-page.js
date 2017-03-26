@@ -1,23 +1,32 @@
 /* eslint-disable no-console */
+import React, { Component } from 'react';
+import { render } from 'react-dom';
+import axios from 'axios';
+import _ from 'lodash';
+import { 
+	Row,
+	Col,
+	Form,
+	Button,
+	ButtonGroup,
+	Modal,
+	FormGroup,
+	FormControl,
+	InputGroup
+} from 'react-bootstrap';
 
-"use strict";
+const ModalHeader = Modal.Header;
+const ModalBody = Modal.Body;
+const ModalFooter = Modal.Footer;
 
-import * as React from 'react';
-import * as ReactDOM from 'react-dom';
-import * as $ from 'jquery';
-import * as _ from 'lodash';
-import * as ReactBootstrap from 'react-bootstrap';
-var Button = ReactBootstrap.Button;
-var Modal = ReactBootstrap.Modal;
-
-class MainPage extends React.Component {
+class MainPage extends Component {
 	constructor(props){
 		super(props);
 
 		this.ws = null;
 
 		this.state = {
-			playlists:  [],
+			playlists: [],
 			selectedPlaylist: '',
 			currentPlaylist: {},
 			currentPlayTime: null,
@@ -28,7 +37,7 @@ class MainPage extends React.Component {
 	}
 
 	receivePlaylist = (message) => {
-		var data = $.parseJSON(message.data);
+		var data = JSON.parse(message.data);
 		var new_playlist = data.playlist;
 		var new_song = data.song_added;
 		if(new_playlist !== undefined){
@@ -61,11 +70,12 @@ class MainPage extends React.Component {
 	}
 
 	componentDidMount = () => {
-		$.get('/playlist')
-		.done(res => {
+		axios.get('/playlist')
+		.then((res) => {
 			//let playlists = $.parseJSON(res);
-			let playlists = res;
-			playlists = _.uniq(_.castArray(playlists.playlists));
+			let data = res.data;
+
+			let playlists = _.uniq(_.castArray(data.playlists));
 			this.setState({
 				playlists: playlists
 			});
@@ -78,14 +88,16 @@ class MainPage extends React.Component {
 	}
 
 	componentDidUpdate = (prevProps, prevState) => {
-		if(this.state.selectedPlaylist != '' && prevState.selectedPlaylist != this.state.selectedPlaylist){
-			this.fetchPlaylist = $.get('/playlist', {'playlist': this.state.selectedPlaylist}, (result) => {
+		if(this.state.selectedPlaylist && prevState.selectedPlaylist !== this.state.selectedPlaylist){
+			this.fetchPlaylist = axios.get(`/playlist?playlist=${this.state.selectedPlaylist}`).then((result) => {
 				if(this.state.selectedPlaylist != ''){
 					console.log('sending: ' + JSON.stringify({'old_playlist': prevState.selectedPlaylist, 'new_playlist': this.state.selectedPlaylist}));
 					this.ws.send(JSON.stringify({'old_playlist': prevState.selectedPlaylist, 'new_playlist': this.state.selectedPlaylist}));
 				}
 				this.setState({
-					currentPlaylist: result.playlist
+					currentPlaylist: result.data.playlist
+				}, () => {
+					this.goLiveOnPlaylist();
 				});
 			});
 		}
@@ -107,18 +119,13 @@ class MainPage extends React.Component {
 					'playlist': this.state.selectedPlaylist,
 					'songUrl': url
 				});
-			$.ajax({
-				method: "PUT",
-				url: '/song',
-				data: {
-					playlist: this.state.selectedPlaylist,
-					type: this.state.currentPlaylist.type,
-					songUrl: url
-				},
-				statusCode: {
-					400: () => {
-						console.log('some kind of error.  check server log');
-					}
+			axios.put('/song', {
+				playlist: this.state.selectedPlaylist,
+				type: this.state.currentPlaylist.type,
+				songUrl: url
+			}).then((res) => {
+				if(res.status === 400) {
+					console.log('Server error.  Check it out.');
 				}
 			});
 		}
@@ -131,9 +138,9 @@ class MainPage extends React.Component {
 	}
 
 	getNextSong = () => {
-		$.get('/song/next?playlist=' + this.state.currentPlaylist.title)
-		.done(res => {
-			let json = res;
+		axios.get('/song/next?playlist=' + this.state.currentPlaylist.title)
+		.then((res) => {
+			let json = res.data;
 			if(json.streamUrl !== null)
 				this.setState({
 					currentSong: json.songUrl,
@@ -149,10 +156,10 @@ class MainPage extends React.Component {
 	}
 
 	goLiveOnPlaylist = (event) => {
-		event.preventDefault();
-		$.get('/song?playlist=' + this.state.currentPlaylist.title)
-		.done(res => {
-			let json = res;
+		if(event) event.preventDefault();
+		axios.get('/song?playlist=' + this.state.currentPlaylist.title)
+		.then((res) => {
+			let json = res.data;
 
 			if(json.songUrl != this.state.currentSong){
 				this.setState({
@@ -190,7 +197,7 @@ class MainPage extends React.Component {
 			var songList = _.map(_.map(this.state.currentPlaylist.songs, 'url'), song => {
 				return song.split('?v=')[1];
 			}).join(',');
-			exportPlaylistLink = <a href={'http://youtube.com/watch_videos?video_ids=' + songList} target='_blank'><span className='glyphicon glyphicon-export'></span></a>;
+			exportPlaylistLink = <a href={'http://youtube.com/watch_videos?video_ids=' + songList} target='_blank'>Export <span className='glyphicon glyphicon-export'></span></a>;
 		}
 
 		var totalTime = this.state.currentPlaylist.length;
@@ -226,49 +233,53 @@ class MainPage extends React.Component {
 		}
 
 		var addSongArea = this.state.currentPlaylist.title === undefined ? null : <AddSongArea addSongCallback={this.addSongCallback} />;
-		var selectedPlaylistIndex = _.findIndex(this.state.playlists, (playlist) => { return this.state.currentPlaylist.title == playlist.title; });
-		var currentSongIndex = _.findIndex(this.state.currentPlaylist.songs, (song) => { return this.state.currentSong == song.streamUrl; });
+		var selectedPlaylistIndex = _.findIndex(this.state.playlists, (playlist) => { return this.state.currentPlaylist && this.state.currentPlaylist.title === playlist.title; });
+		var currentSongIndex = _.findIndex(this.state.currentPlaylist.songs, (song) => { return this.state.currentSong && this.state.currentSong === song.streamUrl; });
 		return (
 			<div>
 				<div id='top-section'>
 					<NavBar signoutCallback={this.signoutCallback} />
-					<div className='row'>
-						<div className='col m3'>
-							{addSongArea}
+					<Row>
+						<div className='left-panel'>
+							<Row>
+								{addSongArea}
+							</Row>
+							<Row>
+								<PlaylistSidebar 
+									playlistSelector={this.selectPlaylist} 
+									playlists={this.state.playlists} 
+									selectedPlaylistIndex={selectedPlaylistIndex} />
+							</Row>
 						</div>
-						<div className='col m6'>
-							{audioBar}
-						</div>
-					</div>
-					<div className='row'>
-						<div className='col m3' style={{paddingLeft: 50}}>
-							<PlaylistSidebar playlistSelector={this.selectPlaylist} playlists={this.state.playlists} selectedPlaylistIndex={selectedPlaylistIndex} />
-						</div>
-						<div className='col m9'>
-							<div id='playlist_area' style={{marginRight: 50}}>
-								<div className='row' style={{marginLeft: 0, marginRight: 0, paddingBottom: 10}}>
-									<div className='left'>
-										{goLiveLink}
+						<div className='right-panel'>
+							<Row>
+								{audioBar}
+							</Row>
+							<Row>
+								<div id='playlist_area' style={{marginRight: 50}}>
+									<div className='row' style={{marginLeft: 50, marginRight: 50, paddingBottom: 10}}>
+										<div className='pull-left'>
+											{goLiveLink}
+										</div>
+										<div className='pull-right'>
+											{exportPlaylistLink}
+										</div>
 									</div>
-									<div className='right'>
-										{exportPlaylistLink}
-									</div>
+									{contentSection}
 								</div>
-								{contentSection}
-							</div>
+							</Row>
 						</div>
-					</div>
+					</Row>
 				</div>
-
 			</div>
 		);
 	}
 }
 
-class NavBar extends React.Component {
+class NavBar extends Component {
 	render = () => {
 		return(
-			<nav>
+			<nav className='navbar navbar-default navbar-fixed-top'>
 				<div className="nav-wrapper">
 					<div className="navbar-header navbar-left">
 						<a className="navbar-brand" href="#">Playlistr</a>
@@ -294,7 +305,7 @@ NavBar.propTypes = {
 	signoutCallback: React.PropTypes.func
 };
 
-class AddSongArea extends React.Component {
+class AddSongArea extends Component {
 	constructor(){
 		super();
 	}
@@ -319,19 +330,24 @@ class AddSongArea extends React.Component {
 
 	render = () => {
         return(
-			<div className='input-field' style={{width: '50%', margin: '10px auto'}}>
-				<input className='form-control' ref='songUrl' type='text' placeholder='Add song to current playlist' onChange={this.onChange} />
-				<span className='input-group-btn'>
-					<button className='btn btn-default' ref='addSong' onClick={this.addSong}>+</button>
-				</span>
-			</div>);
+			// <div className='input-field' style={{width: '50%', margin: '10px auto'}}>
+			<FormGroup>
+				<InputGroup>
+					<input className='form-control' ref='songUrl' type='text' placeholder='Add song to current playlist' onChange={this.onChange} />
+					<InputGroup.Button>
+						<button className='btn btn-default' ref='addSong' onClick={this.addSong}>+</button>
+					</InputGroup.Button>
+				</InputGroup>
+			</FormGroup>
+			// </div>
+		);
 	}
 }
 AddSongArea.propTypes = {
 	addSongCallback: React.PropTypes.func
 };
 
-class CustomAudioBar extends React.Component {
+class CustomAudioBar extends Component {
 	constructor(props){
 		super(props);
 		this.state = {
@@ -354,15 +370,13 @@ class CustomAudioBar extends React.Component {
 	}
 
 	timeHandler = () => {
-		console.log(this.refs.audioPlayerHidden.currentTime);
+		console.log(this.audioPlayer.currentTime);
 		this.setState({
-			currTime: this.refs.audioPlayerHidden.currentTime
+			currTime: this.audioPlayer.currentTime
 		});
 	}
 
 	componentDidMount = () => {
-		this.audioPlayer = ReactDOM.findDOMNode(this.refs.audioPlayerHidden);
-
 		this.audioPlayer.addEventListener('timeupdate', this.timeHandler);
 		this.audioPlayer.addEventListener('pause', this.pauseHandler);
 		this.audioPlayer.addEventListener('ended', this.endedHandler);
@@ -386,7 +400,7 @@ class CustomAudioBar extends React.Component {
 	}
 
 	togglePlay = () => {
-		var audioPlayer = this.refs.audioPlayerHidden;
+		var audioPlayer = this.audioPlayer;
 		if(audioPlayer.paused) audioPlayer.play();
 		else{
 			this.refs.innerDiv.style.transition = 'paused';
@@ -395,19 +409,19 @@ class CustomAudioBar extends React.Component {
 	}
 
 	adjustVolume = () => {
-		this.refs.audioPlayerHidden.volume = this.refs.volumeSlider.value / 100;
+		this.audioPlayer.volume = this.refs.volumeSlider.value / 100;
 	}
 
 	render = () => {
 		var glyphicon_class = "glyphicon glyphicon-";
 		var width = 0;
-		if(this.refs.audioPlayerHidden !== undefined){
-			glyphicon_class += this.refs.audioPlayerHidden.paused ? "play" : "pause";
+		if(this.audioPlayer){
+			glyphicon_class += this.audioPlayer.paused ? "play" : "pause";
 			var button = <button className='btn left' onClick={this.togglePlay}>
 							<span className={glyphicon_class}></span>
 						</button>;
 
-			width = (this.state.currTime / this.refs.audioPlayerHidden.duration * 100) + '%';
+			width = (this.state.currTime / this.audioPlayer.duration * 100) + '%';
 
 			var currMinutes = Math.floor(this.state.currTime / 60);
 			var currSeconds = Math.floor(this.state.currTime - currMinutes * 60);
@@ -419,26 +433,26 @@ class CustomAudioBar extends React.Component {
 			var totalSeconds = Math.floor(this.props.totalTime - totalMinutes * 60);
 			var totalTimeString = totalSeconds < 10 ? (totalMinutes + ':0' + totalSeconds) : (totalMinutes + ':' + totalSeconds);
 
-			var playbackBar = <div ref='outerDiv' style={{backgroundColor: 'lightgray', borderRadius: '3px', width: '85%', height: '25px', position: 'relative', top: '3px', left: '5%'}}>
-								<div ref='innerDiv' style={{backgroundColor: 'cornflowerblue', borderRadius: '3px', width: width, height: '25px'}}>
+			var playbackBar = <div ref='outerDiv' style={{backgroundColor: 'lightgray', borderRadius: '3px', height: '45px', position: 'relative'}}>
+								<div ref='innerDiv' style={{backgroundColor: '#375a7f', borderRadius: '3px', width: width, height: '45px'}}>
 								</div>
-								<div style={{position: 'absolute', top: '2px', right: '5px'}}>
+								<div style={{position: 'absolute', top: '12px', right: '5px'}}>
 									{currTimeString + ' / ' + totalTimeString}
 								</div>
 							</div>;
-			var volumeControl = <input style={{position: 'absolute', top: '28px', right: '-50px', width: '15%'}} className='pull-right' type="range" onInput={this.adjustVolume} ref="volumeSlider" min={0} max={100} />;
-			if(this.refs.innerDiv !== undefined && this.state.currTime != 0 && width != '100%'){
+
+			var volumeControl = <input type="range" style={{ position: 'relative', top: '12px' }} onInput={this.adjustVolume} ref="volumeSlider" min={0} max={100} />;
+			if(this.refs.innerDiv && this.state.currTime != 0 && width != '100%'){
 				this.refs.innerDiv.style.transition = 'width 1s linear 0s';
 			}
 		}
 
 		return (
-			<div className='row' style={{display: 'inline'}}>
-				{button}
-				{playbackBar}
-				{volumeControl}
-				<div className='clearfix'></div>
-				<audio ref='audioPlayerHidden' hidden src={this.props.currentSong}></audio>
+			<div>
+				<Col md={1} mdOffset={1}>{button}</Col>
+				<Col md={7}>{playbackBar}</Col>
+				<Col md={2}>{volumeControl}</Col>
+				<audio ref={(audioPlayer) => this.audioPlayer = audioPlayer} hidden src={this.props.currentSong}></audio>
 			</div>
 		);
 	}
@@ -468,8 +482,6 @@ class VideoPlayer extends React.Component {
 	}
 
 	componentDidMount = () => {
-		this.videoPlayer = ReactDOM.findDOMNode(this.refs.videoPlayer);
-
 		this.videoPlayer.addEventListener('pause', () => {
 			this.pauseHandler();
 		});
@@ -502,9 +514,9 @@ class VideoPlayer extends React.Component {
 	}
 
 	componentWillUnmount = () => {
-		this.audioPlayer.removeEventListener('timeupdate', this.timeHandler);
-		this.audioPlayer.removeEventListener('pause', this.pauseHandler);
-		this.audioPlayer.removeEventListener('ended', this.nextSongGetter);
+		this.videoPlayer.removeEventListener('timeupdate', this.timeHandler);
+		this.videoPlayer.removeEventListener('pause', this.pauseHandler);
+		this.videoPlayer.removeEventListener('ended', this.nextSongGetter);
 	}
 
 	rewindVideo = (time) => {
@@ -543,7 +555,7 @@ class VideoPlayer extends React.Component {
 	}
 
 	render = () => {
-		var volumeControl = <input type="range" onInput={this.adjustVolume} ref="volumeSlider" min={0} max={100} />;
+		var volumeControl = <input type="range" style={{ position: 'relative', top: 12 }} onInput={this.adjustVolume} ref="volumeSlider" min={0} max={100} />;
 
 		var glyphicon = 'play';
 		// var currentTime = 0;
@@ -559,26 +571,31 @@ class VideoPlayer extends React.Component {
 
 		return(
 			<div>
-				<video
-					onClick={this.togglePause}
-					ref='videoPlayer' 
-					src={this.props.currentVideo}
-					hidden={this.props.currentVideo === '' ? 'hidden' : ''} 
-				>
-				</video>
-				<div className='row' style={{marginBottom: 10}}>
-					<div className='col s1' style={{display: 'inline', width: '10%'}}>
-						<button onClick={this.rewindVideo.bind(null, 30)}className='btn'>{'<<'}</button>
-						<button onClick={this.rewindVideo.bind(null, 15)} className='btn'>{'<'}</button>
-						<button onClick={this.togglePause} className='btn'><span className={'glyphicon glyphicon-' + glyphicon}></span></button>
-					</div>
-					<div className='col-xs-8'>
+				<Row style={{ textAlign: 'center' }}>
+					<video
+						onClick={this.togglePause}
+						ref={(videoPlayer) => this.videoPlayer = videoPlayer} 
+						src={this.props.currentVideo}
+						hidden={this.props.currentVideo === '' ? 'hidden' : ''} 
+					/>
+				</Row>
+				<Row className='row' style={{ margin: '20px auto' }}>
+					<Col md={2}>
+						<ButtonGroup>
+							<Button onClick={this.rewindVideo.bind(null, 30)} bsStyle='primary'>{'<<'}</Button>
+							<Button onClick={this.rewindVideo.bind(null, 15)} bsStyle='primary'>{'<'}</Button>
+							<Button onClick={this.togglePause} bsStyle='primary'>
+								<span className={'glyphicon glyphicon-' + glyphicon}></span>
+							</Button>
+						</ButtonGroup>
+					</Col>
+					<Col sm={8}>
 						{progressBar}
-					</div>
-					<div className='col-xs-2'>
+					</Col>
+					<Col sm={2}>
 						{volumeControl}
-					</div>
-				</div>
+					</Col>
+				</Row>
 			</div>
 		);
 	}
@@ -633,10 +650,10 @@ class ProgressBar extends React.Component {
 		if(this.refs.innerDiv !== undefined && this.props.isPaused) this.refs.innerDiv.style.transition = 'paused';
 
 		return (
-			<div ref='outerDiv' style={{backgroundColor: 'lightgray', borderRadius: '3px', top: 3, width: '100%', height: '25px', position: 'relative'}}>
-				<div ref='innerDiv' style={{backgroundColor: 'cornflowerblue', borderRadius: '3px', width: width, height: '25px'}}>
+			<div ref='outerDiv' style={{backgroundColor: 'darkgray', borderRadius: '3px', top: 3, width: '100%', height: '45px'}}>
+				<div ref='innerDiv' style={{backgroundColor: '#375a7f', borderRadius: '3px', width: width, height: '45px'}}>
 				</div>
-				<div style={{position: 'absolute', top: '2px', right: '5px'}}>
+				<div style={{position: 'absolute', top: '12px', right: '20px'}}>
 					{currTimeString + ' / ' + totalTimeString}
 				</div>
 			</div>
@@ -650,59 +667,56 @@ ProgressBar.propTypes = {
 };
 
 class PlaylistCreator extends React.Component {
-	constructor(){
-		super();
+	constructor(props){
+		super(props);
+
+		this.state = {
+			isShown: false,
+			playlistName: '',
+			playlistCategory: '',
+			playlistPassword: '',
+			playlistOpenSubmissions: true,
+			playlistType: 'music',
+			hasError: false,
+			nameTaken: false
+		};
 	}
 
-	state = {
-		isShown: false,
-		playlistName: '',
-		playlistCategory: '',
-		playlistPassword: '',
-		playlistOpenSubmissions: true,
-		playlistType: 'music',
-		hasError: false,
-		nameTaken: false
-	}
-
-	showPlaylistCreator = () => {
+	showModal = () => {
 		this.setState({
 			isShown: true
 		});
 	}
 
-	hidePlaylistCreator = () => {
+	hideModal = () => {
 		this.setState({
 			isShown: false
 		});
 	}
 
 	createPlaylist = () => {
-		this.makePlaylist = $.ajax({
-			method: 'PUT',
-			url: '/playlist',
-			data: {
-				playlist: this.state.playlistName,
-				category: this.state.playlistCategory,
-				password: this.state.playlistPassword,
-				openSubmissions: this.state.playlistOpenSubmissions,
-				type: this.state.playlistType
-			},
-			statusCode: {
-				409: () => {
-					this.setState({
-						nameTaken: true
-					});
-				},
-				400: () => {
-					this.setState({
-						hasError: true
-					});
-				}
+		this.makePlaylist = axios.put('/playlist', {
+			playlist: this.state.playlistName,
+			category: this.state.playlistCategory,
+			password: this.state.playlistPassword,
+			openSubmissions: this.state.playlistOpenSubmissions,
+			type: this.state.playlistType
+		})
+		.then((res) => {
+			if(res.status === 409) {
+				this.setState({
+					nameTaken: true
+				});
 			}
-		}).success(() => {
-			this.props.playlistSelector(this.state.playlistName);
-			this.hidePlaylistCreator();
+			else if(res.status === 400) {
+				this.setState({
+					hasError: true
+				});
+			}
+			else {
+				this.props.playlistSelector(this.state.playlistName);
+				this.hideModal();
+			}
 		});
 	}
 
@@ -721,22 +735,19 @@ class PlaylistCreator extends React.Component {
 	}
 
 	render = () => {
-		var alertArea = this.state.nameTaken ? <div className=''>Playlist name already taken.</div> : null;
+		var alertArea = this.state.nameTaken ? <div className='alert-danger'>Playlist name already taken.</div> : null;
 		return(
 			<div>
 				<Button
 					bsStyle="primary"
-					onClick={this.showPlaylistCreator}
-					style={{width: '80%', left: '10%', position: 'relative', marginBottom: '10px'}}
-				>
+					onClick={this.showModal}
+					style={{width: '80%', left: '10%', position: 'relative', marginBottom: '10px'}}>
 					Create Playlist
 				</Button>
 
-				<Modal show={this.state.isShown} onHide={this.hidePlaylistCreator}>
-					<Modal.Header closeButton>
-						<Modal.Title>Create New Playlist</Modal.Title>
-					</Modal.Header>
-					<Modal.Body>
+				<Modal show={this.state.isShown} onHide={this.hideModal}>
+					<ModalHeader closeButton>Create New Playlist</ModalHeader>
+					<ModalBody>
 						<PlaylistForm 
 							hasError={this.state.hasError} 
 							createPlaylist={this.createPlaylist} 
@@ -747,10 +758,10 @@ class PlaylistCreator extends React.Component {
 							playlistOpenSubmissions={this.state.playlistOpenSubmissions} 
 							playlistType={this.state.playlistType}
 						/>
-					</Modal.Body>
-					<Modal.Footer>
+					</ModalBody>
+					<ModalFooter>
 						{alertArea}
-					</Modal.Footer>
+					</ModalFooter>
 				</Modal>
 			</div>
 		);
@@ -776,27 +787,96 @@ class PlaylistForm extends React.Component {
 	}
 
 	render = () => {
-		var classname = this.props.hasError ? 'form-group has-error' : 'form-group';
+		var classname = this.props.hasError ? 'has-error' : '';
 		return(
-			<div>
-				<div className={classname}>
-					<input type="text" ref="playlistName" className="form-control" placeholder="Playlist title" required value={this.props.playlistName} onChange={this.handleChange} />
-					<input type="text" ref="playlistCategory" className="form-control" placeholder="Playlist category" required value={this.props.playlistCategory} onChange={this.handleChange} />
-				</div>
-				<input type="text" className="form-control" placeholder="Password (leave blank for none)" ref="playlistPassword" value={this.props.playlistPassword} onChange={this.handleChange} />
+			<Form horizontal>
+				<FormGroup className={classname}>
+					<Col md={2}>
+						Title
+					</Col>
+					<Col md={10}>
+						<input 
+							type="text" 
+							ref="playlistName" 
+							className="form-control" 
+							placeholder="Playlist title" 
+							required 
+							value={this.props.playlistName} 
+							onChange={this.handleChange} />
+					</Col>
+				</FormGroup>
+				<FormGroup>
+					<Col md={2}>
+						Category
+					</Col>
+					<Col md={10}>
+						<input 
+							type="text" 
+							ref="playlistCategory" 
+							className="form-control" 
+							placeholder="Playlist category" 
+							required 
+							value={this.props.playlistCategory} 
+							onChange={this.handleChange} />
+					</Col>
+				</FormGroup>
+				<FormGroup>
+					<Col md={2}>
+						Password
+					</Col>
+					<Col md={10}>
+						<input 
+							type="text" 
+							className="form-control" 
+							placeholder="Password (leave blank for none)" 
+							ref="playlistPassword" 
+							value={this.props.playlistPassword} 
+							onChange={this.handleChange} />
+					</Col>
+				</FormGroup>
 				<div className="checkbox">
-					<label>
-						Public submissions
-						<input type="checkbox" ref="playlistOpenSubmissions" checked={this.props.playlistOpenSubmissions} onChange={this.handleChange} ></input>
-					</label>
+					<FormGroup>
+						<Col md={6}>
+							Public Submissions
+						</Col>
+						<Col md={6}>
+							<input 
+								type="checkbox" 
+								ref="playlistOpenSubmissions" 
+								checked={this.props.playlistOpenSubmissions} 
+								onChange={this.handleChange} />
+						</Col>
+					</FormGroup>
 				</div>
 				<div className="typeRadio">
-					<input type='radio' name="type" ref='musicPlaylist' onChange={this.handleChange} checked={this.props.playlistType === 'music' ? 'checked' : ''} /> Music
-					<input type='radio' name="type" ref='videoPlaylist' onChange={this.handleChange} checked={this.props.playlistType === 'video' ? 'checked' : ''} /> Video
+					<FormGroup>
+						<Col md={2}>
+							Music 
+						</Col>
+						<Col md={2}>
+							<input 
+								type='radio' 
+								name="type" 
+								ref='musicPlaylist' 
+								onChange={this.handleChange} 
+								checked={this.props.playlistType === 'music' ? 'checked' : ''} />
+						</Col>
+						<Col md={2}>
+							Video 
+						</Col>
+						<Col md={2}>
+							<input 
+								type='radio' 
+								name="type" 
+								ref='videoPlaylist' 
+								onChange={this.handleChange} 
+								checked={this.props.playlistType === 'video' ? 'checked' : ''} />
+						</Col>
+					</FormGroup>
 				</div>
 				<button type="submit" className="btn btn-primary pull-right" id="create_playlist" onClick={this.props.createPlaylist}>Create</button>
 				<div className="clearfix"></div>
-			</div>
+			</Form>
 		);
 	}
 }
@@ -812,15 +892,6 @@ PlaylistForm.propTypes = {
 };
 
 class PlaylistSidebar extends React.Component {
-	constructor(){
-		super();
-	}
-
-	static defaultProps = {
-		playlists: [],
-		selectedPlaylistIndex: -1
-	}
-
 	playlistSelector = (name) => {
 		this.props.playlistSelector(name);
 	}
@@ -857,7 +928,7 @@ class PlaylistSidebar extends React.Component {
 	}
 }
 PlaylistSidebar.propTypes = {
-	playlists: React.PropTypes.arr,
+	playlists: React.PropTypes.array,
 	selectedPlaylistIndex: React.PropTypes.number,
 	playlistSelector: React.PropTypes.func
 };
@@ -874,7 +945,7 @@ class Playlist extends React.Component {
 	}
 
 	render = () => {
-		var style = this.props.selected ? {backgroundColor: 'cornflowerblue'} : {};
+		var style = this.props.selected ? {backgroundColor: '#375a7f'} : {};
 		var glyphicon = this.props.type === 'music' ? 'glyphicon-music' : 'glyphicon-film';
 		return(
 			<button 
@@ -936,7 +1007,7 @@ class SongArea extends React.Component {
 }
 SongArea.propTypes = {
 	title: React.PropTypes.string,
-	songs: React.PropTypes.arr,
+	songs: React.PropTypes.array,
 	currentSongIndex: React.PropTypes.number
 };
 
@@ -987,4 +1058,4 @@ PlaylistSong.propTypes = {
 	selected: React.PropTypes.bool
 };
 
-ReactDOM.render(<MainPage />, document.getElementById('main-panel'));
+render(<MainPage />, document.getElementById('main-panel'));
