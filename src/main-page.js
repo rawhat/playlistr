@@ -497,9 +497,9 @@ class VideoPlayer extends React.Component {
 	}
 
 	componentDidUpdate = () => {
-		if(this.props.currentVideo !== null){
+		if(this.props.currentVideo){
 			var playStatus = this.props.playOnLoad && this.videoPlayer.paused ? true : false;
-			if(this.props.currentTime !== null){
+			if(this.props.currentTime){
 				this.videoPlayer.currentTime = this.props.currentTime;
 				this.props.timeRegistered();
 			}
@@ -524,10 +524,12 @@ class VideoPlayer extends React.Component {
 	}
 
 	timeHandler = () => {
-		var currTime = this.videoPlayer.currentTime;
-		this.setState({
-			currTime: currTime
-		});
+		if(this.videoPlayer) {
+			var currTime = this.videoPlayer.currentTime;
+			this.setState({
+				currTime: currTime
+			});
+		}
 	}
 
 	nextSongGetter = () => {
@@ -579,8 +581,8 @@ class VideoPlayer extends React.Component {
 						hidden={this.props.currentVideo === '' ? 'hidden' : ''} 
 					/>
 				</Row>
-				<Row className='row' style={{ margin: '20px auto' }}>
-					<Col md={2}>
+				<Row style={{ margin: '20px auto' }}>
+					<Col md={3}>
 						<ButtonGroup>
 							<Button onClick={this.rewindVideo.bind(null, 30)} bsStyle='primary'>{'<<'}</Button>
 							<Button onClick={this.rewindVideo.bind(null, 15)} bsStyle='primary'>{'<'}</Button>
@@ -589,10 +591,10 @@ class VideoPlayer extends React.Component {
 							</Button>
 						</ButtonGroup>
 					</Col>
-					<Col sm={8}>
+					<Col md={7}>
 						{progressBar}
 					</Col>
-					<Col sm={2}>
+					<Col md={2}>
 						{volumeControl}
 					</Col>
 				</Row>
