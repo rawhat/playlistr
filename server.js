@@ -21,12 +21,17 @@ var buildPlaylistManager = function(){
 	console.log('building...');
 	r.connect({host: 'localhost', port: 28015}, (err, conn) => {
 		r.db('Playlistr').table('playlists').run(conn, (err, results) => {
-			results.toArray((err, res) => {
-				_.each(res, playlist => {
-					manager.addExistingPlaylist(playlist);
+			if(!err) {
+				results.toArray((err, res) => {
+					_.each(res, playlist => {
+						manager.addExistingPlaylist(playlist);
+					});
+					console.log('finished!');
 				});
-				console.log('finished!');
-			});
+			}
+			else {
+				console.error(err);
+			}
 		});
 	});
 };
@@ -202,6 +207,7 @@ app.get('/playlist', (req, res) => {
 	var title = req.query.playlist;
 	if(title !== undefined){
 		var playlist = manager.getPlaylist(title);
+		playlist.playbackTimer = null;
 		playlist.getSongs(songs => {
 			playlist.songs = songs;
 			res.json({playlist: playlist});
@@ -299,24 +305,29 @@ buildPlaylistManager();
 
 r.connect({host: 'localhost', port: 28015}, (err, conn) => {
 	r.db('Playlistr').table('playlists').changes().run(conn, (err, cursor) => {
-		cursor.each((err,change) => {
-			var new_playlist = change.new_val.title;
-			if(change.old_val !== null && change.old_val.title === new_playlist){
-				r.db('Playlistr').table('songs').getAll(change.new_val.songs[change.new_val.songs.length-1], {index: 'url'}).run(conn, (err, song) => {
-					song.toArray((err, res) => {
-						song = res[0];
-						_.each(playlistSubscribers[new_playlist], subscriber => {
-							subscriber.send(JSON.stringify({song_added: song}));
+		if(!err) {
+			cursor.each((err,change) => {
+				var new_playlist = change.new_val.title;
+				if(change.old_val !== null && change.old_val.title === new_playlist){
+					r.db('Playlistr').table('songs').getAll(change.new_val.songs[change.new_val.songs.length-1], {index: 'url'}).run(conn, (err, song) => {
+						song.toArray((err, res) => {
+							song = res[0];
+							_.each(playlistSubscribers[new_playlist], subscriber => {
+								subscriber.send(JSON.stringify({song_added: song}));
+							});
 						});
 					});
-				});
-			}
-			else{
-				_.each(allSubscribers, subscriber => {
-					subscriber.send(JSON.stringify({playlist: change.new_val}));
-				});
-			}
-		});
+				}
+				else{
+					_.each(allSubscribers, subscriber => {
+						subscriber.send(JSON.stringify({playlist: change.new_val}));
+					});
+				}
+			});
+		}
+		else {
+			console.error(err);
+		}
 	});
 });
 

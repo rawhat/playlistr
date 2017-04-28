@@ -579,6 +579,7 @@ class VideoPlayer extends React.Component {
 						ref={(videoPlayer) => this.videoPlayer = videoPlayer} 
 						src={this.props.currentVideo}
 						hidden={this.props.currentVideo === '' ? 'hidden' : ''} 
+						width='85%'
 					/>
 				</Row>
 				<Row style={{ margin: '20px auto' }}>
