@@ -697,7 +697,8 @@ class PlaylistCreator extends React.Component {
 		});
 	}
 
-	createPlaylist = () => {
+	createPlaylist = (ev) => {
+		ev.preventDefault();
 		this.makePlaylist = axios.put('/playlist', {
 			playlist: this.state.playlistName,
 			category: this.state.playlistCategory,
