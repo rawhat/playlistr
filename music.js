@@ -6,12 +6,12 @@ var databaseInsert = function(table, obj, callback) {
 	r.connect({host: 'localhost', port: 28015}, (err, conn) => {
 		if(err) throw err;
 		r.db('Playlistr').table(table).insert(obj)
-		 .run(conn, (err, results) => {
+		.run(conn, (err) => {
 			if(err){
-				throw err;
 				callback(false);
+				return;
 			}
-			callback(true)
+			callback(true);
 		});
 	});
 }
@@ -44,7 +44,7 @@ class Playlist {
 		this.category = category;
 		this.password = password;
 		this.openSubmissions = openSubmissions;
-		this.type = type
+		this.type = type;
 		this.length = 0;
 		this.isPaused = true;
 		this.startDate = null; // last time it was played
@@ -66,10 +66,10 @@ class Playlist {
 			.update({
 				songs: r.row('songs').append(song.url)
 			})
-			.run(conn, (err, results) => {
+			.run(conn, (err) => {
 				if(err){
-					throw err;
 					callback(false);
+					return;
 				}
 				this.songs = this.songs.concat(song);
 				this.updateLength();

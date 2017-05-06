@@ -2,6 +2,7 @@
 import React, { Component } from 'react';
 import { render } from 'react-dom';
 import axios from 'axios';
+import io from 'socket.io-client';
 import _ from 'lodash';
 import { 
 	Row,
@@ -23,7 +24,7 @@ class MainPage extends Component {
 	constructor(props){
 		super(props);
 
-		this.ws = null;
+		this.socket = null;
 
 		this.state = {
 			playlists: [],
@@ -31,13 +32,13 @@ class MainPage extends Component {
 			currentPlaylist: {},
 			currentPlayTime: null,
 			paused: true,
-			currentSong: '',
-			ws: null
+			currentSong: ''
 		};
 	}
 
 	receivePlaylist = (message) => {
-		var data = JSON.parse(message.data);
+		// console.log(data);
+		var data = JSON.parse(message);
 		var new_playlist = data.playlist;
 		var new_song = data.song_added;
 		if(new_playlist !== undefined){
@@ -46,27 +47,42 @@ class MainPage extends Component {
 			});
 		}
 		else if (new_song !== undefined){
-			var playlistCopy = _.cloneDeep(this.state.currentPlaylist);
-			playlistCopy.songs = _.concat(playlistCopy.songs, new_song);
-			this.setState({
-				currentPlaylist: playlistCopy
+			// var playlistCopy = _.cloneDeep(this.state.currentPlaylist);
+			// playlistCopy.songs = _.concat(playlistCopy.songs, new_song);
+			// this.setState({
+			// 	currentPlaylist: playlistCopy
+			// });
+			axios.get(`/playlist?playlist=${this.state.currentPlaylist.title}`)
+			.then((res) => {
+				let { data } = res;
+				let { playlist } = data;
+
+				this.setState({
+					currentPlaylist: playlist
+				});
 			});
 		}
 	}
 
 	componentWillMount = () => {
-		this.ws = new WebSocket("ws://" + window.location.host + "/playlist/socket");
-		this.ws.onopen = () => {
-			this.setState({
-				ws: this.ws
-			});
-			console.log('socket opened');
-		};
+		// this.ws = new WebSocket("ws://" + window.location.host + "/playlist/socket");
+		// this.ws.onopen = () => {
+		// 	this.setState({
+		// 		ws: this.ws
+		// 	});
+		// 	console.log('socket opened');
+		// };
 
-		this.ws.onmessage = (message) => {
-			console.log(message);
-			this.receivePlaylist(message);
-		};
+		// this.ws.onmessage = (message) => {
+		// 	console.log(message);
+		// 	this.receivePlaylist(message);
+		// };
+		this.socket = io.connect('http://localhost:8880');
+		this.socket.on('change', (data) => {
+			console.log('ws message', data);
+			// console.log('detecting change: ', data);
+			this.receivePlaylist(data);
+		});
 	}
 
 	componentDidMount = () => {
@@ -92,7 +108,7 @@ class MainPage extends Component {
 			this.fetchPlaylist = axios.get(`/playlist?playlist=${this.state.selectedPlaylist}`).then((result) => {
 				if(this.state.selectedPlaylist != ''){
 					console.log('sending: ' + JSON.stringify({'old_playlist': prevState.selectedPlaylist, 'new_playlist': this.state.selectedPlaylist}));
-					this.ws.send(JSON.stringify({'old_playlist': prevState.selectedPlaylist, 'new_playlist': this.state.selectedPlaylist}));
+					this.socket.emit('message', JSON.stringify({'old_playlist': prevState.selectedPlaylist, 'new_playlist': this.state.selectedPlaylist}));
 				}
 				this.setState({
 					currentPlaylist: result.data.playlist
@@ -239,8 +255,8 @@ class MainPage extends Component {
 			<div>
 				<div id='top-section'>
 					<NavBar signoutCallback={this.signoutCallback} />
-					<Row>
-						<div className='left-panel'>
+					<Row className='middle-section'>
+						<Col md={2}>
 							<Row>
 								{addSongArea}
 							</Row>
@@ -250,8 +266,8 @@ class MainPage extends Component {
 									playlists={this.state.playlists} 
 									selectedPlaylistIndex={selectedPlaylistIndex} />
 							</Row>
-						</div>
-						<div className='right-panel'>
+						</Col>
+						<Col md={10}>
 							<Row>
 								{audioBar}
 							</Row>
@@ -268,7 +284,7 @@ class MainPage extends Component {
 									{contentSection}
 								</div>
 							</Row>
-						</div>
+						</Col>
 					</Row>
 				</div>
 			</div>

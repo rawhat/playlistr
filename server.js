@@ -83,8 +83,8 @@ app.set('view engine', 'pug');
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-var expressWs = require('express-ws')(app);
-app = expressWs.app;
+// var expressWs = require('express-ws')(app);
+// app = expressWs.app;
 
 /*
 // LoginHandler
@@ -265,31 +265,55 @@ app.put('/playlist', (req, res) => {
 var allSubscribers = [];
 var playlistSubscribers = {};
 
-// PlaylistSocketHandler
-app.ws('/playlist/socket', function(ws) {
-	ws.on('connection', function() {
-		allSubscribers = _.uniq(_.concat(allSubscribers, this));
-		//console.log(allSubscribers);
-	});
+const server = require('http').Server(app);
+const io = require('socket.io')(server);
 
-	ws.on('message', function(message) {
-		//console.log(message);
+io.on('connection', (socket) => {
+	allSubscribers = _.uniq(_.concat(allSubscribers, socket));
+
+	socket.on('message', function(message) {
+		console.log(message);
 		var msg = JSON.parse(message);
 		if(msg.new_playlist){
-			playlistSubscribers[msg.new_playlist] = playlistSubscribers[msg.new_playlist] === undefined ? [ws] : _.concat(playlistSubscribers[msg.new_playlist], ws);
-			if(msg.old_playlist)
-				playlistSubscribers[msg.old_playlist] = _.without(playlistSubscribers[msg.old_playlist], ws);
-			//console.log(playlistSubscribers);
+			playlistSubscribers[msg.new_playlist] = playlistSubscribers[msg.new_playlist] === undefined ? [socket] : _.concat(playlistSubscribers[msg.new_playlist], socket);
+			if(msg.old_playlist) {
+				playlistSubscribers[msg.old_playlist] = _.without(playlistSubscribers[msg.old_playlist], socket);
+			}
 		}
 	});
 
-	ws.on('close', function() {
-		allSubscribers = _.without(allSubscribers, ws);
-		//console.log(allSubscribers);
+	socket.on('disconnect', function() {
+		allSubscribers = _.without(allSubscribers, socket);
 	});
-	
-	allSubscribers = _.uniq(_.concat(allSubscribers, ws));
 });
+
+// PlaylistSocketHandler
+// app.ws('/playlist/socket', function(ws) {
+// 	ws.on('connection', function() {
+// 		allSubscribers = _.uniq(_.concat(allSubscribers, this));
+// 		//console.log(allSubscribers);
+// 	});
+
+// 	ws.on('message', function(message) {
+// 		//console.log(message);
+// 		var msg = JSON.parse(message);
+// 		if(msg.new_playlist){
+// 			playlistSubscribers[msg.new_playlist] = playlistSubscribers[msg.new_playlist] === undefined ? [ws] : _.concat(playlistSubscribers[msg.new_playlist], ws);
+// 			if(msg.old_playlist)
+// 				playlistSubscribers[msg.old_playlist] = _.without(playlistSubscribers[msg.old_playlist], ws);
+// 			//console.log(playlistSubscribers);
+// 		}
+// 	});
+
+// 	ws.on('close', function() {
+// 		allSubscribers = _.without(allSubscribers, ws);
+// 		//console.log(allSubscribers);
+// 	});
+	
+// 	allSubscribers = _.uniq(_.concat(allSubscribers, ws));
+// });
+
+
 
 app.use('/random', (req, res) => {
 	console.log(req.body);
@@ -313,14 +337,14 @@ r.connect({host: 'localhost', port: 28015}, (err, conn) => {
 						song.toArray((err, res) => {
 							song = res[0];
 							_.each(playlistSubscribers[new_playlist], subscriber => {
-								subscriber.send(JSON.stringify({song_added: song}));
+								subscriber.emit('change', JSON.stringify({song_added: song}));
 							});
 						});
 					});
 				}
 				else{
 					_.each(allSubscribers, subscriber => {
-						subscriber.send(JSON.stringify({playlist: change.new_val}));
+						subscriber.emit('change', JSON.stringify({playlist: change.new_val}));
 					});
 				}
 			});
@@ -337,4 +361,4 @@ r.connect({host: 'localhost', port: 28015}, (err, conn) => {
 // 	else
 // 		console.log('error :(');
 // });
-app.listen(8880);
+server.listen(8880);

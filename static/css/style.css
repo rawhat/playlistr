@@ -27,6 +27,16 @@ header {
   min-height: 40px !important;
 }
 
+.middle-section {
+  margin-top: 75px;
+  padding: 20px;
+  margin-left: 20px;
+}
+
+.row.middle-section {
+  margin-right: 0px;
+}
+
 .left-panel {
   position: fixed;
   width: 25%;

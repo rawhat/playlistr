@@ -30,6 +30,7 @@
     "react-bootstrap": "^0.30.8",
     "react-dom": "^15.1.0",
     "rethinkdb": "^2.3.1",
+    "socket.io": "^1.7.3",
     "webpack": "^1.13.0",
     "youtube-dl": "^1.11.1"
   },
