@@ -3,11 +3,9 @@
 var express = require('express');
 var bodyParser = require('body-parser');
 var passport = require('passport');
-// var r = require('rethinkdb');
 var neo4j = require('neo4j-driver').v1;
 var Neo4jConnector = require('./neo4j-connector').Neo4jConnector;
 var _ = require('lodash');
-// var fs = require('fs');
 
 var Music = require('./music.js');
 var Playlist = Music.Playlist;
