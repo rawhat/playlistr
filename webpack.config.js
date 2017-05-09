@@ -1,7 +1,7 @@
 module.exports = {
 	entry: ['babel-polyfill', './src/app.js'],
 	output: {
-		path: './static/js',
+		path: __dirname + '/static/js',
 		filename: '[name].min.js'
 	},
 	module: {

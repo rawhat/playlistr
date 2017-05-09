@@ -37,7 +37,6 @@ class Playlist {
 
 	async addSong(song) {
 		if(this.driver && this.conn) {
-			let session = this.driver.session();
 			try {
 				let params = Object.assign({}, _.omit(song, 'driver'), { addedAt: Date.now(), title: this.title });
 				await this.conn.makeQuery(`MATCH (p:Playlist) WHERE p.title = {title}
