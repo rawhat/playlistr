@@ -36,85 +36,47 @@ class MainPage extends Component {
 		};
 	}
 
-	receivePlaylist = (message) => {
-		// console.log(data);
-		var data = JSON.parse(message);
-		var new_playlist = data.playlist;
-		var new_song = data.song_added;
-		if(new_playlist !== undefined){
-			this.setState({
-				playlists: _.uniq(_.concat(this.state.playlists, new_playlist))
-			});
-		}
-		else if (new_song !== undefined){
-			// var playlistCopy = _.cloneDeep(this.state.currentPlaylist);
-			// playlistCopy.songs = _.concat(playlistCopy.songs, new_song);
-			// this.setState({
-			// 	currentPlaylist: playlistCopy
-			// });
-			axios.get(`/playlist?playlist=${this.state.currentPlaylist.title}`)
-			.then((res) => {
-				let { data } = res;
-				let { playlist } = data;
-
-				this.setState({
-					currentPlaylist: playlist
-				});
-			});
-		}
-	}
-
 	componentWillMount = () => {
-		// this.ws = new WebSocket("ws://" + window.location.host + "/playlist/socket");
-		// this.ws.onopen = () => {
-		// 	this.setState({
-		// 		ws: this.ws
-		// 	});
-		// 	console.log('socket opened');
-		// };
-
-		// this.ws.onmessage = (message) => {
-		// 	console.log(message);
-		// 	this.receivePlaylist(message);
-		// };
 		this.socket = io.connect('http://localhost:8880');
-		this.socket.on('change', (data) => {
-			console.log('ws message', data);
-			// console.log('detecting change: ', data);
-			this.receivePlaylist(data);
-		});
-	}
 
-	componentDidMount = () => {
-		axios.get('/playlist')
-		.then((res) => {
-			//let playlists = $.parseJSON(res);
-			let data = res.data;
-
-			let playlists = _.uniq(_.castArray(data.playlists));
+		this.socket.on('new-playlist', (msg) => {
 			this.setState({
-				playlists: playlists
+				playlists: _.uniq(_.concat(this.state.playlists, msg.playlist))
+			});
+		});
+
+		this.socket.on('new-song', async (msg) => {
+			console.log(msg);
+			let response = await axios.get(`/playlist?playlist=${this.state.currentPlaylist.title}`);
+			let playlist = response.data.playlist;
+			this.setState({
+				currentPlaylist: playlist
 			});
 		});
 	}
 
-	componentWillUnmount = () => {
-		this.fetchPlaylist.abort();
-		this.fetchPlaylists.abort();
+	componentDidMount = async () => {
+		let res = await axios.get('/playlist');
+		let data = res.data;
+
+		let playlists = _.uniq(_.castArray(data.playlists));
+		this.setState({
+			playlists: playlists
+		});
 	}
 
-	componentDidUpdate = (prevProps, prevState) => {
+	componentDidUpdate = async (prevProps, prevState) => {
 		if(this.state.selectedPlaylist && prevState.selectedPlaylist !== this.state.selectedPlaylist){
-			this.fetchPlaylist = axios.get(`/playlist?playlist=${this.state.selectedPlaylist}`).then((result) => {
-				if(this.state.selectedPlaylist != ''){
-					console.log('sending: ' + JSON.stringify({'old_playlist': prevState.selectedPlaylist, 'new_playlist': this.state.selectedPlaylist}));
-					this.socket.emit('message', JSON.stringify({'old_playlist': prevState.selectedPlaylist, 'new_playlist': this.state.selectedPlaylist}));
-				}
-				this.setState({
-					currentPlaylist: result.data.playlist
-				}, () => {
-					this.goLiveOnPlaylist();
-				});
+			let result = await axios.get(`/playlist?playlist=${this.state.selectedPlaylist}`);
+
+			if(this.state.selectedPlaylist){
+				// console.log('sending: ' + JSON.stringify({'old_playlist': prevState.selectedPlaylist, 'new_playlist': this.state.selectedPlaylist}));
+				this.socket.emit('change-playlist', { old_playlist: prevState.selectedPlaylist, new_playlist: this.state.selectedPlaylist});
+			}
+			this.setState({
+				currentPlaylist: result.data.playlist
+			}, () => {
+				this.goLiveOnPlaylist();
 			});
 		}
 	}
@@ -393,6 +355,7 @@ class CustomAudioBar extends Component {
 	}
 
 	componentDidMount = () => {
+		this.audioPlayer.volume = .25;
 		this.audioPlayer.addEventListener('timeupdate', this.timeHandler);
 		this.audioPlayer.addEventListener('pause', this.pauseHandler);
 		this.audioPlayer.addEventListener('ended', this.endedHandler);
@@ -457,7 +420,7 @@ class CustomAudioBar extends Component {
 								</div>
 							</div>;
 
-			var volumeControl = <input type="range" style={{ position: 'relative', top: '12px' }} onInput={this.adjustVolume} ref="volumeSlider" min={0} max={100} />;
+			var volumeControl = <input type="range" style={{ position: 'relative', top: '12px' }} onInput={this.adjustVolume} ref="volumeSlider" min={0} max={100} defaultValue={25}/>;
 			if(this.refs.innerDiv && this.state.currTime != 0 && width != '100%'){
 				this.refs.innerDiv.style.transition = 'width 1s linear 0s';
 			}
@@ -498,6 +461,8 @@ class VideoPlayer extends React.Component {
 	}
 
 	componentDidMount = () => {
+		this.videoPlayer.volume = .25;
+
 		this.videoPlayer.addEventListener('pause', () => {
 			this.pauseHandler();
 		});
@@ -573,7 +538,7 @@ class VideoPlayer extends React.Component {
 	}
 
 	render = () => {
-		var volumeControl = <input type="range" style={{ position: 'relative', top: 12 }} onInput={this.adjustVolume} ref="volumeSlider" min={0} max={100} />;
+		var volumeControl = <input type="range" style={{ position: 'relative', top: 12 }} onInput={this.adjustVolume} ref="volumeSlider" min={0} max={100} defaultValue={25}/>;
 
 		var glyphicon = 'play';
 		// var currentTime = 0;
@@ -1078,4 +1043,5 @@ PlaylistSong.propTypes = {
 	selected: React.PropTypes.bool
 };
 
-render(<MainPage />, document.getElementById('main-panel'));
+// render(<MainPage />, document.getElementById('main-panel'));
+export default MainPage;

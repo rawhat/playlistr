@@ -18,6 +18,10 @@ header {
   border-bottom: 1px solid grey;
 }
 
+.row {
+  margin-left: 0px;
+}
+
 .navbar-nav > li > a {
   padding-top: 10px !important;
   padding-bottom: 10px !important;

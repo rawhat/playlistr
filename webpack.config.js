@@ -1,5 +1,5 @@
 module.exports = {
-	entry: './src/main-page.js',
+	entry: ['babel-polyfill', './src/app.js'],
 	output: {
 		path: './static/js',
 		filename: '[name].min.js'
@@ -8,9 +8,9 @@ module.exports = {
 		loaders: [
 			{
 				exclude: /node_modules/,
-				loader: 'babel',
+				loader: 'babel-loader',
 				query: {
-					presets: ['es2015', 'stage-0', 'react']
+					presets: [['es2015', { modules: false }], 'stage-0', 'react']
 				}
 			}
 		]
