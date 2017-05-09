@@ -7,5 +7,5 @@ Watch or listen to YouTube videos alongside other users.  Create a playlist and 
 #### Technologies
 * React
 * Express
-* RethinkDB
+* Neo4j
 * youtube-dl
