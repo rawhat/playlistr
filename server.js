@@ -36,24 +36,9 @@ var buildPlaylistManager = async function(){
 		console.error('erroring in build');
 		console.error(err);
 	}
-
-	// r.connect({host: 'localhost', port: 28015}, (err, conn) => {
-	// 	r.db('Playlistr').table('playlists').run(conn, (err, results) => {
-	// 		if(!err) {
-	// 			results.toArray((err, res) => {
-	// 				_.each(res, playlist => {
-	// 					manager.addExistingPlaylist(playlist);
-	// 				});
-	// 				console.log('finished!');
-	// 			});
-	// 		}
-	// 		else {
-	// 			console.error(err);
-	// 		}
-	// 	});
-	// });
 };
 
+// TODO:  still needs to be updated for neo4j
 // var updateStreamUrls = function(callback) {
 // 	r.connect({host: 'localhost', port: 28015}, (err, conn) => {
 // 		var songObj = {};
