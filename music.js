@@ -40,7 +40,7 @@ class Playlist {
 			try {
 				let params = Object.assign({}, _.omit(song, 'driver'), { addedAt: Date.now(), title: this.title });
 				await this.conn.makeQuery(`MATCH (p:Playlist) WHERE p.title = {title}
-				CREATE (p)-[:HAS { addedAt: {addedAt} }]->(:Song {
+				CREATE UNIQUE (p)-[:HAS { addedAt: {addedAt} }]->(:Song {
 					info: {info},
 					isVideo: {isVideo},
 					url: {url},
@@ -220,7 +220,7 @@ class PlaylistManager {
 			}
 			else {
 				console.error(error);
-				return {};
+				throw Error(error);
 			}
 		}
 		else{

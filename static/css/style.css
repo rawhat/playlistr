@@ -22,18 +22,20 @@ header {
   margin-left: 0px;
 }
 
-.navbar-nav > li > a {
+/*.navbar-nav > li > a {
   padding-top: 10px !important;
   padding-bottom: 10px !important;
 }
 
 .navbar {
   min-height: 40px !important;
+}*/
+
+#top-section {
+  margin-top: 60px;
 }
 
 .middle-section {
-  margin-top: 75px;
-  padding: 20px;
   margin-left: 20px;
 }
 
@@ -94,6 +96,7 @@ div#create_playlist_button_area {
 ::-webkit-scrollbar-track-piece {
     background-color: #3b3b3b;
     -webkit-border-radius: 6px;
+    border-radius: 6px;
 }
 
 ::-webkit-scrollbar-thumb {

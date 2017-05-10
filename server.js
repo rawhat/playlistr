@@ -14,7 +14,12 @@ var Song = Music.Song;
 var processUrl = Music.processUrl;
 var processVideoUrl = Music.processVideoUrl;
 
-var driver = new neo4j.driver('bolt://localhost', neo4j.auth.basic('neo4j', 'neo4j'));
+const db = {
+	address: 'bolt://localhost',
+	username: 'neo4j',
+	password: 'neo4j'
+};
+var driver = new neo4j.driver(db.address, neo4j.auth.basic(db.username, db.password));
 var conn = new Neo4jConnector(driver);
 var manager = new PlaylistManager(driver, conn);
 
@@ -23,6 +28,9 @@ var buildPlaylistManager = async function(){
 
 	let session = driver.session();
 	try {
+		await session.run('CREATE CONSTRAINT on (u:User) ASSERT u.username IS UNIQUE;');
+		await session.run('CREATE CONSTRAINT on (p:Playlist) ASSERT p.title IS UNIQUE;');
+		await session.run('CREATE CONSTRAINT on (s:Song) ASSERT s.url IS UNIQUE;');
 		let results = await session.run('MATCH (p:Playlist) RETURN p AS playlist');
 		results.records.forEach(record => {
 			let playlist = record.get('playlist').properties;
@@ -78,56 +86,146 @@ var buildPlaylistManager = async function(){
 
 var app = express();
 
+var session = require('express-session');
+app.use(session({ 
+	secret: 'this is a hook its catchy you like it',
+	resave: false,
+	saveUninitialized: false,
+	cookie: { secure: false }
+}));
+
 app.use(express.static('static'));
 app.set('view engine', 'pug');
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// var LocalStrategy = require('passport-local').Strategy;
-// passport.use(new LocalStrategy(
-// 	(username, password, callback) => {
-
-// 	}
-// ));
-
-app.post('/login', async (req, res) => {
-	let { username, password } = req.body;
-	let session = driver.session();
-	try {
-		let results = await session.run('MATCH (u:User) WHERE u.username = {username} AND u.password = {password} RETURN u as user;', { username, password });
-		if(results.records.length) {
-			let user = _.omit(results.records[0].get('user').properties, 'password');
-			res.send(user);
-			res.end();
-		}
-		else {
-			// put this back in
-			// res.sendStatus(403);
-			res.sendStatus(200);
-			res.end();
-		}
+var LocalStrategy = require('passport-local').Strategy;
+passport.use(new LocalStrategy({
+		usernameField: 'username',
+		passwordField: 'password'
+	}, (username, password, done) => {
+		let session = driver.session();
+		session.run('MATCH (u:User) WHERE u.username = {username} AND u.password = {password} RETURN u as user', 
+			{ username, password })
+		.then((results) => {
+			try {
+				let user = results.records[0].get('user').properties;
+				done(null, user);
+			}
+			catch (err) {
+				done(null, false);
+			}
+		})
+		.catch((err) => {
+			done(err);
+		});
 	}
-	catch(err) {
-		console.error(err);
-		res.send(err);
+));
+
+passport.serializeUser(function(user, done) {
+  done(null, user.username);
+});
+
+passport.deserializeUser(function(username, done) {
+	let session = driver.session();
+	session.run('MATCH (u:User) WHERE u.username = {username} RETURN u AS user;', { username })
+	.then((results) => {
+		let user = results.records[0].get('user').properties;
+		done(null, user);
+	})
+	.catch((err) => {
+		done(err, false);
+	});
+});
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+const auth = (req, res, next) => {
+	if(!req.isAuthenticated()) {
+		res.sendStatus(401);
 		res.end();
 	}
-});
+	else {
+		next();
+	}
+};
 
-app.get('/logout', (req, res) => {
-
-});
-
-app.post('/sign-up', (req, res) => {
-	let { username, password, password_repeat, email } = req.body;
-	console.log(username, email, password, password_repeat);
-	res.sendStatus(203);
+app.post('/login', passport.authenticate('local'), (req, res) => {
+	res.sendStatus(200);
 	res.end();
 });
 
+// app.post('/login', async (req, res) => {
+// 	let { username, password } = req.body;
+// 	let session = driver.session();
+// 	try {
+// 		let results = await session.run('MATCH (u:User) WHERE u.username = {username} AND u.password = {password} RETURN u as user;', { username, password });
+// 		if(results.records.length) {
+// 			let user = _.omit(results.records[0].get('user').properties, 'password');
+// 			res.send(user);
+// 			res.end();
+// 		}
+// 		else {
+// 			// put this back in
+// 			// res.sendStatus(403);
+// 			res.sendStatus(200);
+// 			res.end();
+// 		}
+// 	}
+// 	catch(err) {
+// 		console.error(err);
+// 		res.send(err);
+// 		res.end();
+// 	}
+// });
+
+app.get('/logout', function(req, res){
+  req.logout();
+  res.redirect('/login');
+});
+
+app.get('/authenticated', auth, (req, res) => {
+	res.send(_.omit(req.user, 'password'));
+	res.end();
+});
+
+app.post('/sign-up', async (req, res) => {
+	let { username, password, password_repeat, email } = req.body;
+	if(password !== password_repeat) {
+		res.sendStatus(409);
+		res.end();
+	}
+	else {
+		try {
+			let session = driver.session();
+			let results = await session.run(`
+				CREATE (u:User { username: {username}, password: {password}, email: {email} })
+				RETURN u AS user;
+			`, { username, password, email });
+
+			let user = results.records[0].get('user').properties;
+			req.login(user, (err) => {
+				if(!err) {
+					res.sendStatus(201);
+					res.end();
+				}
+				else
+					res.redirect('/login');
+			});
+		}
+		catch(err) {
+			console.error(err);
+			res.status(400).send({ error: 'Username already exists.' });
+			res.end();
+		}
+		
+	}
+});
+
 // SongHandler
-app.get('/song', async (req, res) => {
+app.get('/song', auth, async (req, res) => {
 	var title = req.query.playlist;
 	var playlist = manager.getPlaylist(title);
 
@@ -145,7 +243,7 @@ app.get('/song', async (req, res) => {
 	}
 });
 
-app.put('/song', async (req, res) => {
+app.put('/song', auth, async (req, res) => {
 	var title = req.body.playlist;
 	var type = req.body.type;
 	var songUrl = req.body.songUrl;
@@ -157,8 +255,6 @@ app.put('/song', async (req, res) => {
 	else {
 		response = await processVideoUrl(songUrl);
 	}
-
-
 
 	if(!response) {
 		res.sendStatus(400);
@@ -185,7 +281,7 @@ app.put('/song', async (req, res) => {
 	}
 });
 
-app.post('/song', async (req, res) => {
+app.post('/song', auth, async (req, res) => {
 	var title = req.body.playlist;
 	var link = req.body.url;
 
@@ -206,7 +302,7 @@ app.post('/song', async (req, res) => {
 });
 
 // SongNextHandler
-app.get('/song/next', async (req, res) => {
+app.get('/song/next', auth, async (req, res) => {
 	var title = req.query.playlist;
 	var playlist = manager.getPlaylist(title);
 	let song = await playlist.getNextSong();
@@ -227,7 +323,7 @@ app.get('/song/next', async (req, res) => {
 });
 
 // PlaylistHandler
-app.get('/playlist', async (req, res) => {
+app.get('/playlist', auth, async (req, res) => {
 	var title = req.query.playlist;
 	if(title){
 		var playlist = manager.getPlaylist(title);
@@ -252,7 +348,7 @@ app.get('/playlist', async (req, res) => {
 		}
 	}
 });
-app.put('/playlist', async (req, res) => {
+app.put('/playlist', auth, async (req, res) => {
 	var title = req.body.playlist;
 	var category = req.body.category;
 	var password = req.body.password;
@@ -301,7 +397,7 @@ app.use('/random', (req, res) => {
 	res.end();
 });
 
-app.use('/', (req, res) => {
+app.get('*', (req, res) => {
 	res.render('index');
 });
 

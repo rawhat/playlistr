@@ -1,10 +1,15 @@
 /* eslint-disable no-console */
 import React, { Component } from 'react';
 import { render } from 'react-dom';
+import { Link } from 'react-router-dom';
 import axios from 'axios';
 import io from 'socket.io-client';
 import _ from 'lodash';
-import { 
+import {
+	Navbar,
+	Nav,
+	MenuItem,
+	NavDropdown,
 	Row,
 	Col,
 	Form,
@@ -35,7 +40,7 @@ class MainPage extends Component {
 			currentSong: ''
 		};
 	}
-
+	/*
 	componentWillMount = () => {
 		this.socket = io.connect('http://localhost:8880');
 
@@ -54,8 +59,25 @@ class MainPage extends Component {
 			});
 		});
 	}
-
+	*/
 	componentDidMount = async () => {
+		this.socket = io.connect('http://localhost:8880');
+
+		this.socket.on('new-playlist', (msg) => {
+			this.setState({
+				playlists: _.uniq(_.concat(this.state.playlists, msg.playlist))
+			});
+		});
+
+		this.socket.on('new-song', async (msg) => {
+			console.log(msg);
+			let response = await axios.get(`/playlist?playlist=${this.state.currentPlaylist.title}`);
+			let playlist = response.data.playlist;
+			this.setState({
+				currentPlaylist: playlist
+			});
+		});
+
 		let res = await axios.get('/playlist');
 		let data = res.data;
 
@@ -87,8 +109,9 @@ class MainPage extends Component {
 		});
 	}
 
-	signoutCallback = () => {
-
+	signoutCallback = async () => {
+		await axios.get('/signout');
+		this.props.history.push('/');
 	}
 
 	addSongCallback = (url) => {
@@ -216,7 +239,7 @@ class MainPage extends Component {
 		return (
 			<div>
 				<div id='top-section'>
-					<NavBar signoutCallback={this.signoutCallback} />
+					{/*<NavBar signoutCallback={this.signoutCallback} username={this.props.user.username} />*/}
 					<Row className='middle-section'>
 						<Col md={2}>
 							<Row>
@@ -257,6 +280,25 @@ class MainPage extends Component {
 class NavBar extends Component {
 	render = () => {
 		return(
+			<Navbar>
+				<Navbar.Header>
+					<Navbar.Brand>
+						<Link to={'/'}>Playlistr</Link>
+					</Navbar.Brand>
+				</Navbar.Header>
+				<Navbar.Collapse>
+					<Nav pullRight>
+						<NavDropdown title={this.props.username} id='basic-nav-dropdown'>
+							<li role="presentation">
+								<Link to="/profile/test" role="menuitem">Profile</Link>
+							</li>
+							<MenuItem divider />
+							<MenuItem href='/signout'>Sign Out</MenuItem>
+						</NavDropdown>
+					</Nav>
+				</Navbar.Collapse>
+			</Navbar>
+		);/*
 			<nav className='navbar navbar-default navbar-fixed-top'>
 				<div className="nav-wrapper">
 					<div className="navbar-header navbar-left">
@@ -265,7 +307,7 @@ class NavBar extends Component {
 					<div id="navbar" className="navbar-collapse collapse">
 						<ul className="nav navbar-nav navbar-right">
 							<li className="dropdown">
-								<a href="#" className="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">username<span className="caret"></span></a>
+								<a href="#" className="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">{this.props.username}<span className="caret"></span></a>
 								<ul className="dropdown-menu">
 									<li><a href="/user">Profile</a></li>
 									<li role="separator" className="divider"></li>
@@ -276,7 +318,7 @@ class NavBar extends Component {
 					</div>
 				</div>
 			</nav>
-		);
+		);*/
 	}
 }
 NavBar.propTypes = {
@@ -396,7 +438,7 @@ class CustomAudioBar extends Component {
 		var width = 0;
 		if(this.audioPlayer){
 			glyphicon_class += this.audioPlayer.paused ? "play" : "pause";
-			var button = <button className='btn left' onClick={this.togglePlay}>
+			var button = <button className='btn btn-primary left' onClick={this.togglePlay}>
 							<span className={glyphicon_class}></span>
 						</button>;
 
@@ -451,7 +493,18 @@ class VideoPlayer extends React.Component {
 		super(props);
 		this.state = {
 			currTime: 0,
-			isPaused: true
+			isPaused: true,
+			isFullscreen: false
+		};
+
+		this.fullscreenStyle = {
+			position: 'fixed',
+			width: '100vw',
+			height: '100vh',
+			left: 0,
+			top: 0,
+			zIndex: 999,
+			backgroundColor: 'rgba(0, 0, 0, 0.75)'
 		};
 	}
 
@@ -475,6 +528,9 @@ class VideoPlayer extends React.Component {
 			this.timeHandler();			
 		});
 
+		this.videoPlayer.addEventListener('dblclick', () => {
+			this.toggleFullscreen();
+		});
 	}
 
 	componentDidUpdate = () => {
@@ -498,6 +554,31 @@ class VideoPlayer extends React.Component {
 		this.videoPlayer.removeEventListener('timeupdate', this.timeHandler);
 		this.videoPlayer.removeEventListener('pause', this.pauseHandler);
 		this.videoPlayer.removeEventListener('ended', this.nextSongGetter);
+		this.videoPlayer.removeEventListener('dblclick', this.toggleFullscreen);
+	}
+
+	toggleFullscreen = () => {
+		if(!this.state.isFullscreen) {
+			if (this.videoPlayer.mozRequestFullScreen) {
+				this.videoPlayer.mozRequestFullScreen();
+			} else if (this.videoPlayer.webkitRequestFullScreen) {
+				this.videoPlayer.webkitRequestFullScreen();
+			}
+			this.setState({
+				isFullscreen: true
+			});
+		}
+		else {
+			if(document.webkitExitFullscreen) {
+				document.webkitExitFullscreen();
+			}
+			else if(document.exitFullscreen) {
+				document.exitFullscreen();
+			}
+			this.setState({
+				isFullscreen: false
+			});
+		}
 	}
 
 	rewindVideo = (time) => {
@@ -533,12 +614,12 @@ class VideoPlayer extends React.Component {
 	}
 
 	adjustVolume = () => {
-		var volumeLevel = this.refs.volumeSlider.value / 100;
+		var volumeLevel = this.volumeSlider.value / 100;
 		this.videoPlayer.volume = volumeLevel;		
 	}
 
 	render = () => {
-		var volumeControl = <input type="range" style={{ position: 'relative', top: 12 }} onInput={this.adjustVolume} ref="volumeSlider" min={0} max={100} defaultValue={25}/>;
+		var volumeControl = <input type="range" style={{ position: 'relative', top: 12 }} onInput={this.adjustVolume} ref={(volumeSlider) => this.volumeSlider = volumeSlider} min={0} max={100} defaultValue={25}/>;
 
 		var glyphicon = 'play';
 		// var currentTime = 0;
@@ -556,11 +637,12 @@ class VideoPlayer extends React.Component {
 			<div>
 				<Row style={{ textAlign: 'center' }}>
 					<video
+						controls={false}
 						onClick={this.togglePause}
 						ref={(videoPlayer) => this.videoPlayer = videoPlayer} 
 						src={this.props.currentVideo}
 						hidden={this.props.currentVideo === '' ? 'hidden' : ''} 
-						width='85%'
+						width={'85%'}
 					/>
 				</Row>
 				<Row style={{ margin: '20px auto' }}>
@@ -706,7 +788,7 @@ class PlaylistCreator extends React.Component {
 	}
 
 	componentWillUnmount = () => {
-		this.makePlaylist.abort();
+		if(this.makePlaylist) this.makePlaylist.cancel();
 	}
 
 	onUserInput = (name, category, password, open, type) => {
