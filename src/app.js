@@ -49,21 +49,23 @@ class App extends Component {
             <Router>
                 <div>
                     <NavBar user={this.state.user} />
-                    <Switch>
-                        <Route exact path="/" render={(props) => {
-                            return !this.state.authenticated ? <Redirect to={'/login'} /> : <Main {...props} user={this.state.user} />;
-                        }} />
-                        <Route path="/login" render={(props) => {
-                            return this.state.authenticated ? <Redirect to={'/'} /> : <Login {...props} authenticate={this.authenticate} />;
-                        }}/>
-                        <Route path="/sign-up" render={(props) => {
-                            return this.state.authenticated ? <Redirect to={'/'} /> : <SignUp {...props} authenticate={this.authenticate} />;
-                        }}/>
-                        <Route exact path="/profile/:username" render={(props) => {
-                            return !this.state.authenticated ? <Redirect to={'/login'} /> : <Profile {...props} username={this.state.user} />;
-                        }}/>
-                        <Route render={() => <h2>Path not found.</h2>} />
-                    </Switch>
+                    <div id='top-section'>
+                        <Switch>
+                            <Route exact path="/" render={(props) => {
+                                return !this.state.authenticated ? <Redirect to={'/login'} /> : <Main {...props} user={this.state.user} />;
+                            }} />
+                            <Route path="/login" render={(props) => {
+                                return this.state.authenticated ? <Redirect to={'/'} /> : <Login {...props} authenticate={this.authenticate} />;
+                            }}/>
+                            <Route path="/sign-up" render={(props) => {
+                                return this.state.authenticated ? <Redirect to={'/'} /> : <SignUp {...props} authenticate={this.authenticate} />;
+                            }}/>
+                            <Route exact path="/profile/:username" render={(props) => {
+                                return !this.state.authenticated ? <Redirect to={'/login'} /> : <Profile {...props} username={this.state.user} />;
+                            }}/>
+                            <Route render={() => <h2>Path not found.</h2>} />
+                        </Switch>
+                    </div>
                 </div>
             </Router>
         );

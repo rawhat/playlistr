@@ -238,40 +238,37 @@ class MainPage extends Component {
 		var currentSongIndex = _.findIndex(this.state.currentPlaylist.songs, (song) => { return this.state.currentSong && this.state.currentSong === song.streamUrl; });
 		return (
 			<div>
-				<div id='top-section'>
-					{/*<NavBar signoutCallback={this.signoutCallback} username={this.props.user.username} />*/}
-					<Row className='middle-section'>
-						<Col md={2}>
-							<Row>
-								{addSongArea}
-							</Row>
-							<Row>
-								<PlaylistSidebar 
-									playlistSelector={this.selectPlaylist} 
-									playlists={this.state.playlists} 
-									selectedPlaylistIndex={selectedPlaylistIndex} />
-							</Row>
-						</Col>
-						<Col md={10}>
-							<Row>
-								{audioBar}
-							</Row>
-							<Row>
-								<div id='playlist_area' style={{marginRight: 50}}>
-									<div className='row' style={{marginLeft: 50, marginRight: 50, paddingBottom: 10}}>
-										<div className='pull-left'>
-											{goLiveLink}
-										</div>
-										<div className='pull-right'>
-											{exportPlaylistLink}
-										</div>
+				<Row className='middle-section'>
+					<Col md={2}>
+						<Row>
+							{addSongArea}
+						</Row>
+						<Row>
+							<PlaylistSidebar 
+								playlistSelector={this.selectPlaylist} 
+								playlists={this.state.playlists} 
+								selectedPlaylistIndex={selectedPlaylistIndex} />
+						</Row>
+					</Col>
+					<Col md={10}>
+						<Row>
+							{audioBar}
+						</Row>
+						<Row>
+							<div id='playlist_area' style={{marginRight: 50}}>
+								<div className='row' style={{marginLeft: 50, marginRight: 50, paddingBottom: 10}}>
+									<div className='pull-left'>
+										{goLiveLink}
 									</div>
-									{contentSection}
+									<div className='pull-right'>
+										{exportPlaylistLink}
+									</div>
 								</div>
-							</Row>
-						</Col>
-					</Row>
-				</div>
+								{contentSection}
+							</div>
+						</Row>
+					</Col>
+				</Row>
 			</div>
 		);
 	}
