@@ -42,7 +42,7 @@ class MainPage extends Component {
 	}
 
 	componentDidMount = async () => {
-		this.socket = io.connect('http://localhost:8880');
+		this.socket = io.connect();
 
 		this.socket.on('new-playlist', (msg) => {
 			this.setState({
