@@ -10,7 +10,8 @@ class Login extends Component {
         };
     }
 
-    login = async () => {
+    login = async (ev) => {
+        ev.preventDefault();
         this.setState({
             error: false
         });
@@ -40,7 +41,7 @@ class Login extends Component {
                 style={{ display: 'flex', alignItems: 'center', height: '100vh' }}>
                 <div className="panel panel-default" style={{ width: '100%', textAlign: 'center' }}>
                     <h2>Login</h2>
-                    <div className='form-horizontal' style={{ width: '75%', margin: '0 auto'}}>
+                    <form className='form-horizontal' style={{ width: '75%', margin: '0 auto'}} onSubmit={this.login}>
                         <span className={`form-group ${this.state.error ? 'has-error' : ''}`}>
                             <label className='col-sm-2 control-label' htmlFor='form-username'>Username</label>
                             <div className="col-sm-10">
@@ -58,7 +59,7 @@ class Login extends Component {
                             <button className="btn btn-primary" onClick={this.login}>Login</button>
                             <Link className='btn btn-success' to='/sign-up'>Sign Up</Link>
                         </div>
-                    </div>
+                    </form>
                 </div>
             </div>
         );

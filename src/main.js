@@ -40,32 +40,13 @@ class MainPage extends Component {
 			currentSong: ''
 		};
 	}
-	/*
-	componentWillMount = () => {
-		this.socket = io.connect('http://localhost:8880');
 
-		this.socket.on('new-playlist', (msg) => {
-			this.setState({
-				playlists: _.uniq(_.concat(this.state.playlists, msg.playlist))
-			});
-		});
-
-		this.socket.on('new-song', async (msg) => {
-			console.log(msg);
-			let response = await axios.get(`/playlist?playlist=${this.state.currentPlaylist.title}`);
-			let playlist = response.data.playlist;
-			this.setState({
-				currentPlaylist: playlist
-			});
-		});
-	}
-	*/
 	componentDidMount = async () => {
 		this.socket = io.connect('http://localhost:8880');
 
 		this.socket.on('new-playlist', (msg) => {
 			this.setState({
-				playlists: _.uniq(_.concat(this.state.playlists, msg.playlist))
+				playlists: _.orderBy(_.uniq(_.concat(this.state.playlists, msg.playlist)), (playlist) => playlist.title, 'asc')
 			});
 		});
 
@@ -83,7 +64,7 @@ class MainPage extends Component {
 
 		let playlists = _.uniq(_.castArray(data.playlists));
 		this.setState({
-			playlists: playlists
+			playlists: _.orderBy(playlists, (playlist) => playlist.title, 'asc')
 		});
 	}
 
@@ -274,57 +255,33 @@ class MainPage extends Component {
 	}
 }
 
-class NavBar extends Component {
-	render = () => {
-		return(
-			<Navbar>
-				<Navbar.Header>
-					<Navbar.Brand>
-						<Link to={'/'}>Playlistr</Link>
-					</Navbar.Brand>
-				</Navbar.Header>
-				<Navbar.Collapse>
-					<Nav pullRight>
-						<NavDropdown title={this.props.username} id='basic-nav-dropdown'>
-							<li role="presentation">
-								<Link to="/profile/test" role="menuitem">Profile</Link>
-							</li>
-							<MenuItem divider />
-							<MenuItem href='/signout'>Sign Out</MenuItem>
-						</NavDropdown>
-					</Nav>
-				</Navbar.Collapse>
-			</Navbar>
-		);/*
-			<nav className='navbar navbar-default navbar-fixed-top'>
-				<div className="nav-wrapper">
-					<div className="navbar-header navbar-left">
-						<a className="navbar-brand" href="#">Playlistr</a>
-					</div>
-					<div id="navbar" className="navbar-collapse collapse">
-						<ul className="nav navbar-nav navbar-right">
-							<li className="dropdown">
-								<a href="#" className="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">{this.props.username}<span className="caret"></span></a>
-								<ul className="dropdown-menu">
-									<li><a href="/user">Profile</a></li>
-									<li role="separator" className="divider"></li>
-									<li><a onClick={this.props.signoutCallback}>Sign Out</a></li>
-								</ul>
-							</li>
-						</ul>
-					</div>
-				</div>
-			</nav>
-		);*/
-	}
-}
+const NavBar = () => {
+	<Navbar>
+		<Navbar.Header>
+			<Navbar.Brand>
+				<Link to={'/'}>Playlistr</Link>
+			</Navbar.Brand>
+		</Navbar.Header>
+		<Navbar.Collapse>
+			<Nav pullRight>
+				<NavDropdown title={this.props.username} id='basic-nav-dropdown'>
+					<li role="presentation">
+						<Link to="/profile/test" role="menuitem">Profile</Link>
+					</li>
+					<MenuItem divider />
+					<MenuItem href='/signout'>Sign Out</MenuItem>
+				</NavDropdown>
+			</Nav>
+		</Navbar.Collapse>
+	</Navbar>;
+};
 NavBar.propTypes = {
 	signoutCallback: React.PropTypes.func
 };
 
 class AddSongArea extends Component {
-	constructor(){
-		super();
+	constructor(props){
+		super(props);
 	}
 
 	state = {
@@ -333,13 +290,13 @@ class AddSongArea extends Component {
 
 	onChange = () => {
 		this.setState({
-			url: this.refs.songUrl.value
+			url: this.songUrl.value
 		});
 	}
 
 	addSong = () => {
 		this.props.addSongCallback(this.state.url);
-		this.refs.songUrl.value = '';
+		this.songUrl.value = '';
 		this.setState({
 			url: ''
 		});
@@ -350,9 +307,9 @@ class AddSongArea extends Component {
 			// <div className='input-field' style={{width: '50%', margin: '10px auto'}}>
 			<FormGroup>
 				<InputGroup>
-					<input className='form-control' ref='songUrl' type='text' placeholder='Add song to current playlist' onChange={this.onChange} />
+					<input className='form-control' ref={(songUrl) => this.songUrl = songUrl} type='text' placeholder='Add song to current playlist' onChange={this.onChange} />
 					<InputGroup.Button>
-						<button className='btn btn-default' ref='addSong' onClick={this.addSong}>+</button>
+						<button className='btn btn-default' onClick={this.addSong}>+</button>
 					</InputGroup.Button>
 				</InputGroup>
 			</FormGroup>
