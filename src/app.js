@@ -8,11 +8,11 @@ import {
     Redirect
 } from 'react-router-dom';
 
-import NavBar from './navbar';
-import Main from './main';
-import Login from './login';
-import SignUp from './sign-up';
-import Profile from './profile';
+import NavBar from './components/navbar';
+import Main from './components/main';
+import Login from './components/login';
+import SignUp from './components/sign-up';
+import Profile from './components/profile';
 
 class App extends Component {
     constructor(props) {
