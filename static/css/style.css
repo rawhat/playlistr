@@ -5,6 +5,9 @@ html {
 
 body {
   height: 100%;
+  width: 100%;
+  position: absolute;
+  top: 0;
 }
 
 audio {
@@ -37,6 +40,17 @@ header {
 
 .middle-section {
   margin-left: 20px;
+}
+
+.middle-section {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display:         flex;
+}
+.middle-section > [class*='col-'] {
+	 display: flex;
+	 flex-direction: column;
 }
 
 .row.middle-section {
@@ -81,6 +95,11 @@ div#playlist_sidebar{
 
 div#create_playlist_button_area {
   padding-bottom: 10px;
+}
+
+.playlist-list-group {
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
 }
 
 ::-webkit-scrollbar {

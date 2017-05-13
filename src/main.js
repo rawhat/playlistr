@@ -1,6 +1,5 @@
 /* eslint-disable no-console */
 import React, { Component } from 'react';
-import { render } from 'react-dom';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import io from 'socket.io-client';
@@ -18,7 +17,9 @@ import {
 	Modal,
 	FormGroup,
 	FormControl,
-	InputGroup
+	InputGroup,
+	Overlay,
+	Popover
 } from 'react-bootstrap';
 
 const ModalHeader = Modal.Header;
@@ -37,7 +38,10 @@ class MainPage extends Component {
 			currentPlaylist: {},
 			currentPlayTime: null,
 			paused: true,
-			currentSong: ''
+			currentSong: '',
+			playlistPasswordOverlay: false,
+			playlistPasswordAccess: null,
+			playlistPasswordError: false
 		};
 	}
 
@@ -68,26 +72,58 @@ class MainPage extends Component {
 		});
 	}
 
-	componentDidUpdate = async (prevProps, prevState) => {
-		if(this.state.selectedPlaylist && prevState.selectedPlaylist !== this.state.selectedPlaylist){
-			let result = await axios.get(`/playlist?playlist=${this.state.selectedPlaylist}`);
+	// componentDidUpdate = async (prevProps, prevState) => {
+	// 	if(this.state.selectedPlaylist && prevState.selectedPlaylist !== this.state.selectedPlaylist){
+	// 		let result = await axios.get(`/playlist?playlist=${this.state.selectedPlaylist}`);
 
-			if(this.state.selectedPlaylist){
-				// console.log('sending: ' + JSON.stringify({'old_playlist': prevState.selectedPlaylist, 'new_playlist': this.state.selectedPlaylist}));
-				this.socket.emit('change-playlist', { old_playlist: prevState.selectedPlaylist, new_playlist: this.state.selectedPlaylist});
+	// 		if(this.state.selectedPlaylist){
+	// 			// console.log('sending: ' + JSON.stringify({'old_playlist': prevState.selectedPlaylist, 'new_playlist': this.state.selectedPlaylist}));
+	// 			this.socket.emit('change-playlist', { old_playlist: prevState.selectedPlaylist, new_playlist: this.state.selectedPlaylist});
+	// 		}
+	// 		this.setState({
+	// 			currentPlaylist: result.data.playlist
+	// 		}, () => {
+	// 			this.goLiveOnPlaylist();
+	// 		});
+	// 	}
+	// }
+
+	selectPlaylist = async (name) => {
+		let playlist = this.state.playlists.find(playlist => playlist.title === name);
+		if(!playlist.hasPassword) {
+			try {
+				let res = await await axios.get(`/playlist?playlist=${name}`);
+				this.socket.emit('change-playlist', { old_playlist: this.state.selectedPlaylist, new_playlist: name });
+				this.setState({
+					selectedPlaylist: res.data.playlist.title,
+					currentPlaylist: res.data.playlist
+				}, () => {
+					this.goLiveOnPlaylist();
+				});
 			}
+			catch(err) {
+				console.error(err);
+			}
+		}
+		else {
 			this.setState({
-				currentPlaylist: result.data.playlist
-			}, () => {
-				this.goLiveOnPlaylist();
+				playlistPasswordAccess: name
 			});
 		}
 	}
 
-	selectPlaylist = (name) => {
-		this.setState({
-			selectedPlaylist: name
-		});
+	selectProtectedPlaylist = async (title, password) => {
+		try {
+			let res = await axios.get(`/playlist?playlist=${title}&password=${password}`);
+			this.setState({
+				selectedPlaylist: res.data.playlist.title,
+				currentPlaylist: res.data.playlist
+			});
+			return true;
+		}
+		catch(err) {
+			return false;
+		}
 	}
 
 	signoutCallback = async () => {
@@ -95,21 +131,22 @@ class MainPage extends Component {
 		this.props.history.push('/');
 	}
 
-	addSongCallback = (url) => {
-		if(url != ''){
-			console.log({
-					'playlist': this.state.selectedPlaylist,
-					'songUrl': url
+	addSongCallback = async (url) => {
+		if(url){
+			console.log({ 'playlist': this.state.selectedPlaylist, 'songUrl': url });
+			try {
+				let res = await axios.put('/song', {
+					playlist: this.state.selectedPlaylist,
+					type: this.state.currentPlaylist.type,
+					songUrl: url
 				});
-			axios.put('/song', {
-				playlist: this.state.selectedPlaylist,
-				type: this.state.currentPlaylist.type,
-				songUrl: url
-			}).then((res) => {
 				if(res.status === 400) {
 					console.log('Server error.  Check it out.');
 				}
-			});
+			}
+			catch(err) {
+				console.error(err);
+			}
 		}
 	}
 
@@ -119,28 +156,33 @@ class MainPage extends Component {
 		});
 	}
 
-	getNextSong = () => {
-		axios.get('/song/next?playlist=' + this.state.currentPlaylist.title)
-		.then((res) => {
+	getNextSong = async () => {
+		try {
+			let res = await axios.get('/song/next?playlist=' + this.state.currentPlaylist.title);
 			let json = res.data;
-			if(json.streamUrl !== null)
+			if(json.streamUrl !== null) {
 				this.setState({
 					currentSong: json.songUrl,
 					currentPlayTime: json.time,
 					paused: false
 				});
-			else
+			}
+			else {
 				this.setState({
 					currentSong: '',
 					paused: true
 				});
-		});
+			}
+		}
+		catch(err) {
+			console.error(err);
+		}
 	}
 
-	goLiveOnPlaylist = (event) => {
+	goLiveOnPlaylist = async (event) => {
 		if(event) event.preventDefault();
-		axios.get('/song?playlist=' + this.state.currentPlaylist.title)
-		.then((res) => {
+		try {
+			let res = await axios.get('/song?playlist=' + this.state.currentPlaylist.title);
 			let json = res.data;
 
 			if(json.songUrl != this.state.currentSong){
@@ -162,7 +204,10 @@ class MainPage extends Component {
 					paused: false
 				});
 			}
-		});
+		}
+		catch(err) {
+			console.error(err);
+		}
 	}
 
 	setPaused = (paused) => {
@@ -179,7 +224,7 @@ class MainPage extends Component {
 			var songList = _.map(_.map(this.state.currentPlaylist.songs, 'url'), song => {
 				return song.split('?v=')[1];
 			}).join(',');
-			exportPlaylistLink = <a href={'http://youtube.com/watch_videos?video_ids=' + songList} target='_blank'>Export <span className='glyphicon glyphicon-export'></span></a>;
+			exportPlaylistLink = <a href={'http://youtube.com/watch_videos?video_ids=' + songList} target='_blank' rel='noopener noreferrer'>Export <span className='glyphicon glyphicon-export'></span></a>;
 		}
 
 		var totalTime = this.state.currentPlaylist.length;
@@ -217,21 +262,34 @@ class MainPage extends Component {
 		var addSongArea = this.state.currentPlaylist.title === undefined ? null : <AddSongArea addSongCallback={this.addSongCallback} />;
 		var selectedPlaylistIndex = _.findIndex(this.state.playlists, (playlist) => { return this.state.currentPlaylist && this.state.currentPlaylist.title === playlist.title; });
 		var currentSongIndex = _.findIndex(this.state.currentPlaylist.songs, (song) => { return this.state.currentSong && this.state.currentSong === song.streamUrl; });
+
+		/*let passwordOverlay = <Overlay title='Playlist password' id='playlist-password-overlay'>
+			<FormGroup validationState={this.state.playlistPasswordError ? 'error' : null}>
+				<InputGroup>
+					<FormControl type='text' id='password-overlay' ref={(overlayPassword) => this.overlayPassword = overlayPassword}/>
+					<InputGroup.Button>
+						<Button bsStyle='success' onClick={this.selectProtectedPlaylist}>Access</Button>
+					</InputGroup.Button>
+				</InputGroup>
+			</FormGroup>
+		</Overlay>;*/
+
 		return (
 			<div>
 				<Row className='middle-section'>
-					<Col md={2}>
+					<Col md={2} sm={12}>
 						<Row>
 							{addSongArea}
 						</Row>
 						<Row>
-							<PlaylistSidebar 
+							<PlaylistSidebar
 								playlistSelector={this.selectPlaylist} 
 								playlists={this.state.playlists} 
-								selectedPlaylistIndex={selectedPlaylistIndex} />
+								selectedPlaylistIndex={selectedPlaylistIndex} 
+								selectProtectedPlaylist={this.selectProtectedPlaylist} />
 						</Row>
 					</Col>
-					<Col md={10}>
+					<Col md={10} sm={12}>
 						<Row>
 							{audioBar}
 						</Row>
@@ -378,13 +436,13 @@ class CustomAudioBar extends Component {
 		var audioPlayer = this.audioPlayer;
 		if(audioPlayer.paused) audioPlayer.play();
 		else{
-			this.refs.innerDiv.style.transition = 'paused';
+			this.innerDiv.style.transition = 'paused';
 			audioPlayer.pause();
 		}
 	}
 
 	adjustVolume = () => {
-		this.audioPlayer.volume = this.refs.volumeSlider.value / 100;
+		this.audioPlayer.volume = this.volumeSlider.value / 100;
 	}
 
 	render = () => {
@@ -408,17 +466,17 @@ class CustomAudioBar extends Component {
 			var totalSeconds = Math.floor(this.props.totalTime - totalMinutes * 60);
 			var totalTimeString = totalSeconds < 10 ? (totalMinutes + ':0' + totalSeconds) : (totalMinutes + ':' + totalSeconds);
 
-			var playbackBar = <div ref='outerDiv' style={{backgroundColor: 'lightgray', borderRadius: '3px', height: '45px', position: 'relative'}}>
-								<div ref='innerDiv' style={{backgroundColor: '#375a7f', borderRadius: '3px', width: width, height: '45px'}}>
+			var playbackBar = <div ref={(outerDiv) => this.outerDiv = outerDiv} style={{backgroundColor: 'lightgray', borderRadius: '3px', height: '45px', position: 'relative'}}>
+								<div ref={(innerDiv) => this.innerDiv = innerDiv} style={{backgroundColor: '#375a7f', borderRadius: '3px', width: width, height: '45px'}}>
 								</div>
 								<div style={{position: 'absolute', top: '12px', right: '5px'}}>
 									{currTimeString + ' / ' + totalTimeString}
 								</div>
 							</div>;
 
-			var volumeControl = <input type="range" style={{ position: 'relative', top: '12px' }} onInput={this.adjustVolume} ref="volumeSlider" min={0} max={100} defaultValue={25}/>;
-			if(this.refs.innerDiv && this.state.currTime != 0 && width != '100%'){
-				this.refs.innerDiv.style.transition = 'width 1s linear 0s';
+			var volumeControl = <input type="range" style={{ position: 'relative', top: '12px' }} onInput={this.adjustVolume} ref={(volumeSlider) => this.volumeSlider = volumeSlider} min={0} max={100} defaultValue={25}/>;
+			if(this.innerDiv && this.state.currTime != 0 && width != '100%'){
+				this.innerDiv.style.transition = 'width 1s linear 0s';
 			}
 		}
 
@@ -667,11 +725,11 @@ class ProgressBar extends React.Component {
 
 		var totalTimeString = totalSeconds < 10 ? (totalMinutes + ':0' + totalSeconds) : (totalMinutes + ':' + totalSeconds);
 
-		if(this.refs.innerDiv !== undefined && this.props.isPaused) this.refs.innerDiv.style.transition = 'paused';
+		if(this.innerDiv !== undefined && this.props.isPaused) this.innerDiv.style.transition = 'paused';
 
 		return (
-			<div ref='outerDiv' style={{backgroundColor: 'darkgray', borderRadius: '3px', top: 3, width: '100%', height: '45px'}}>
-				<div ref='innerDiv' style={{backgroundColor: '#375a7f', borderRadius: '3px', width: width, height: '45px'}}>
+			<div ref={(outerDiv) => this.outerDiv = outerDiv} style={{backgroundColor: 'darkgray', borderRadius: '3px', top: 3, width: '100%', height: '45px'}}>
+				<div ref={(innerDiv) => this.innerDiv = innerDiv} style={{backgroundColor: '#375a7f', borderRadius: '3px', width: width, height: '45px'}}>
 				</div>
 				<div style={{position: 'absolute', top: '12px', right: '20px'}}>
 					{currTimeString + ' / ' + totalTimeString}
@@ -714,7 +772,7 @@ class PlaylistCreator extends React.Component {
 		});
 	}
 
-	createPlaylist = (ev) => {
+	createPlaylist = async (ev) => {
 		ev.preventDefault();
 		this.makePlaylist = axios.put('/playlist', {
 			playlist: this.state.playlistName,
@@ -722,8 +780,10 @@ class PlaylistCreator extends React.Component {
 			password: this.state.playlistPassword,
 			openSubmissions: this.state.playlistOpenSubmissions,
 			type: this.state.playlistType
-		})
-		.then((res) => {
+		});
+
+		try {
+			let res = await this.makePlaylist;
 			if(res.status === 409) {
 				this.setState({
 					nameTaken: true
@@ -738,7 +798,10 @@ class PlaylistCreator extends React.Component {
 				this.props.playlistSelector(this.state.playlistName);
 				this.hideModal();
 			}
-		});
+		}
+		catch(err) {
+			console.error(err);
+		}
 	}
 
 	componentWillUnmount = () => {
@@ -799,11 +862,11 @@ class PlaylistForm extends React.Component {
 
 	handleChange = () => {
 		this.props.onUserInput(
-			this.refs.playlistName.value,
-			this.refs.playlistCategory.value,
-			this.refs.playlistPassword.value,
-			this.refs.playlistOpenSubmissions.checked,
-			this.refs.musicPlaylist.checked ? 'music' : 'video'
+			this.playlistName.value,
+			this.playlistCategory.value,
+			this.playlistPassword.value,
+			this.playlistOpenSubmissions.checked,
+			this.musicPlaylist.checked ? 'music' : 'video'
 		);
 	}
 
@@ -818,7 +881,7 @@ class PlaylistForm extends React.Component {
 					<Col md={10}>
 						<input 
 							type="text" 
-							ref="playlistName" 
+							ref={(playlistName) => this.playlistName = playlistName}
 							className="form-control" 
 							placeholder="Playlist title" 
 							required 
@@ -833,7 +896,7 @@ class PlaylistForm extends React.Component {
 					<Col md={10}>
 						<input 
 							type="text" 
-							ref="playlistCategory" 
+							ref={(playlistCategory) => this.playlistCategory = playlistCategory}
 							className="form-control" 
 							placeholder="Playlist category" 
 							required 
@@ -850,7 +913,7 @@ class PlaylistForm extends React.Component {
 							type="text" 
 							className="form-control" 
 							placeholder="Password (leave blank for none)" 
-							ref="playlistPassword" 
+							ref={(playlistPassword) => this.playlistPassword = playlistPassword}
 							value={this.props.playlistPassword} 
 							onChange={this.handleChange} />
 					</Col>
@@ -863,7 +926,7 @@ class PlaylistForm extends React.Component {
 						<Col md={6}>
 							<input 
 								type="checkbox" 
-								ref="playlistOpenSubmissions" 
+								ref={(playlistOpenSubmissions) => this.playlistOpenSubmissions = playlistOpenSubmissions}
 								checked={this.props.playlistOpenSubmissions} 
 								onChange={this.handleChange} />
 						</Col>
@@ -878,7 +941,7 @@ class PlaylistForm extends React.Component {
 							<input 
 								type='radio' 
 								name="type" 
-								ref='musicPlaylist' 
+								ref={(musicPlaylist) => this.musicPlaylist = musicPlaylist}
 								onChange={this.handleChange} 
 								checked={this.props.playlistType === 'music' ? 'checked' : ''} />
 						</Col>
@@ -889,7 +952,7 @@ class PlaylistForm extends React.Component {
 							<input 
 								type='radio' 
 								name="type" 
-								ref='videoPlaylist' 
+								ref={(videoPlaylist) => this.videoPlaylist = videoPlaylist}
 								onChange={this.handleChange} 
 								checked={this.props.playlistType === 'video' ? 'checked' : ''} />
 						</Col>
@@ -920,13 +983,16 @@ class PlaylistSidebar extends React.Component {
 	render = () => {
 		var playlists = null;
 		if(this.props.playlists.length != 0){
-			playlists = <div className='list-group'>
+			playlists = <div className='playlist-list-group list-group'>
 					{_.map(this.props.playlists, (playlist, index) => {
 						var selected = index == this.props.selectedPlaylistIndex;
 						return <Playlist 
-									playlistSelector={this.playlistSelector.bind(null, playlist.title)} 
-									name={playlist.title} 
-									key={index} 
+									playlistSelector={this.playlistSelector.bind(null, playlist.title)}
+									selectProtectedPlaylist={this.props.selectProtectedPlaylist}
+									hasPassword={playlist.hasPassword}
+									passwordOverlay={this.props.passwordOverlay}
+									name={playlist.title}
+									key={index}
 									selected={selected}
 									type={playlist.type}
 								/>;
@@ -951,12 +1017,19 @@ class PlaylistSidebar extends React.Component {
 PlaylistSidebar.propTypes = {
 	playlists: React.PropTypes.array,
 	selectedPlaylistIndex: React.PropTypes.number,
-	playlistSelector: React.PropTypes.func
+	playlistSelector: React.PropTypes.func,
+	selectProtectedPlaylist: React.PropTypes.func,
+	passwordOverlay: React.PropTypes.element
 };
 
 class Playlist extends React.Component {
 	constructor(props){
 		super(props);
+		this.state = {
+			overlayShown: false,
+			playlistPasswordError: false,
+			password: null
+		};
 	}
 
 	static defaultProps = {
@@ -965,29 +1038,129 @@ class Playlist extends React.Component {
 		type: ''
 	}
 
+	toggleOverlay = () => {
+		this.setState({
+			overlayShown: !this.state.overlayShown
+		});
+	}
+
+	onChange = (ev) => {
+		if(this.state.playlistPasswordError) {
+			this.setState({ playlistPasswordError: false });
+		}
+		let password = ev.target.value;
+		this.setState({
+			password
+		});
+	}
+
+	submitPassword = (ev) => {
+		ev.preventDefault();
+		this.setState({
+			playlistPasswordError: false
+		}, async () => {
+			let status = await this.props.selectProtectedPlaylist(this.props.name, this.state.password);
+			if(status) {
+				this.setState({
+					overlayShown: false,
+					password: null
+				});
+			}
+			else {
+				this.setState({
+					playlistPasswordError: true
+				});
+			}
+		});
+	}
+
 	render = () => {
 		var style = this.props.selected ? {backgroundColor: '#375a7f'} : {};
 		var glyphicon = this.props.type === 'music' ? 'glyphicon-music' : 'glyphicon-film';
-		return(
-			<button 
+		if(this.props.hasPassword) {
+			return <div ref={(overlayTarget) => this.overlayTarget = overlayTarget}>
+				<button 
+					onClick={this.toggleOverlay} 
+					style={style} 
+					type='button' 
+					className='list-group-item playlist-selector' 
+					id={this.props.name}
+					ref={(playlistButton) => this.playlistButton = playlistButton}
+				>
+					{this.props.name}
+					<div className='pull-right'>
+						{this.props.hasPassword ? <span className='glyphicon glyphicon-lock' style={{ paddingRight: 5 }}></span> : null}
+						<span className={'glyphicon ' + glyphicon}></span>
+					</div>
+				</button>
+				<Overlay
+					rootClose
+					show={this.state.overlayShown}
+					onHide={() => this.setState({ overlayShown: false })}
+					placement='right'
+					containerPadding={20}
+					target={this.playlistButton}
+					ref={(overlay) => this.overlay = overlay}>
+						<Popover id='playlist-password-overlay' title='Playlist password'>
+							<FormGroup validationState={this.state.playlistPasswordError ? 'error' : null} onSubmit={this.submitPassword}>
+								<InputGroup>
+									<FormControl type='text' id='password-overlay' onChange={this.onChange}/>
+									<InputGroup.Button>
+										<Button type='submit' bsStyle='success' onClick={this.submitPassword}>Access</Button>
+									</InputGroup.Button>
+								</InputGroup>
+							</FormGroup>
+						</Popover>
+				</Overlay>
+			</div>;
+		}
+		else {
+			return <button 
 				onClick={this.props.playlistSelector.bind(null, this.props.name)} 
 				style={style} 
 				type='button' 
-				className='list-group-item playlist-selector pull-left' 
+				className='list-group-item playlist-selector' 
 				id={this.props.name}
 			>
 				{this.props.name}
-				<span className={'pull-right glyphicon ' + glyphicon}></span>
-			</button>
-		);
+				<div className='pull-right'>
+					{this.props.hasPassword ? <span className='glyphicon glyphicon-lock' style={{ paddingRight: 5 }}></span> : null}
+					<span className={'glyphicon ' + glyphicon}></span>
+				</div>
+			</button>;
+		}
 	}
 }
 Playlist.propTypes = {
 	name: React.PropTypes.string,
 	type: React.PropTypes.string,
 	selected: React.PropTypes.bool,
-	playlistSelector: React.PropTypes.func
+	playlistSelector: React.PropTypes.func,
+	hasPassword: React.PropTypes.bool,
+	playlistPasswordError: React.PropTypes.bool,
+	selectProtectedPlaylist: React.PropTypes.func
 };
+
+// const PasswordOverlay = ({ style, inputChange, playlistPasswordError, selectProtectedPlaylist }) => {
+// 	/*<div style={{
+// 			...style,
+// 			position: 'absolute',
+// 			marginLeft: -5,
+// 			marginTop: 5,
+// 			padding: 10,
+// 			border: '1px solid lightgray',
+// 			borderRadius: 3
+// 		}}>*/
+// 	return (
+		
+// 	);
+// };
+// PasswordOverlay.propTypes = {
+// 	style: React.PropTypes.object,
+// 	inputChange: React.PropTypes.func,
+// 	playlistPasswordError: React.PropTypes.bool,
+// 	selectProtectedPlaylist: React.PropTypes.func
+// };
 
 class SongArea extends React.Component {
 	constructor(){
@@ -1014,7 +1187,7 @@ class SongArea extends React.Component {
 				<div>
 					<h2>{this.props.title}</h2>
 					<div className="well well-sm">
-						<h4>There's nothing here.  Add songs to this playlist at the top left.</h4>
+						<h4>{"There's nothing here.  Add songs to this playlist at the top left."}</h4>
 					</div>
 				</div>
 			);
@@ -1079,5 +1252,4 @@ PlaylistSong.propTypes = {
 	selected: React.PropTypes.bool
 };
 
-// render(<MainPage />, document.getElementById('main-panel'));
 export default MainPage;

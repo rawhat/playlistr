@@ -14,7 +14,8 @@ class Song {
 }
 
 class Playlist {
-	constructor(title, category, password="", openSubmissions=true, type) {
+	constructor(title, category, password="", openSubmissions=true, type, creator) {
+		this.creator = creator;
 		this.title = title;
 		this.category = category;
 		this.password = password;
@@ -39,7 +40,7 @@ class Playlist {
 		if(this.driver && this.conn) {
 			try {
 				let params = Object.assign({}, _.omit(song, 'driver'), { addedAt: Date.now(), title: this.title });
-				await this.conn.makeQuery(`MATCH (p:Playlist) WHERE p.title = {title}
+				let { error } = await this.conn.makeQuery(`MATCH (p:Playlist) WHERE p.title = {title}
 				CREATE UNIQUE (p)-[:HAS { addedAt: {addedAt} }]->(:Song {
 					info: {info},
 					isVideo: {isVideo},
@@ -48,9 +49,12 @@ class Playlist {
 					streamUrl: {streamUrl}
 				}) RETURN p as playlist`, params);
 
-				this.songs = this.songs.concat(song);
-				this.updateLength();
-				return true;
+				if(error) throw Error(error);
+				else {
+					this.songs = this.songs.concat(song);
+					this.updateLength();
+					return true;
+				}
 			}
 			catch(err) {
 				throw Error(err);
@@ -74,6 +78,9 @@ class Playlist {
 			catch(err) {
 				throw Error(err);
 			}
+			finally {
+				session.close();
+			}
 		}
 		else {
 			throw Error('Driver not initialized');
@@ -90,6 +97,9 @@ class Playlist {
 			}
 			catch(err) {
 				throw Error(err);
+			}
+			finally {
+				session.close();
 			}
 		}
 		else {
@@ -197,7 +207,8 @@ class PlaylistManager {
 	async addPlaylist(playlist) {
 		if(!this.playlists.hasOwnProperty(playlist.title)) {
 			let { data, error } = await this.conn.makeQuery(`
-				CREATE (p:Playlist { 
+				MATCH (u:User) WHERE u.username = {creator}
+				CREATE (u)-[:CREATED { createdAt: {createdAt} }]->(p:Playlist { 
 					title: {title},
 					category: {category},
 					password: {password},
@@ -210,7 +221,7 @@ class PlaylistManager {
 					currentSongIndex: {currentSongIndex},
 					hasPlayed: {hasPlayed}
 				}) RETURN p AS playlist
-			`, Object.assign({}, playlist));
+			`, Object.assign({}, playlist, { createdAt: Date.now(), creator: playlist.creator }));
 
 			if(!error) {
 				this.playlists[playlist.title] = playlist;
@@ -230,9 +241,9 @@ class PlaylistManager {
 	}
 
 	addExistingPlaylist(playlist) {
-		const { title, category, password, openSubmissions, type } = playlist;
+		const { title, category, password, openSubmissions, type, creator } = playlist;
 
-		this.playlists[playlist.title] = new Playlist(title, category, password, openSubmissions, type);
+		this.playlists[playlist.title] = new Playlist(title, category, password, openSubmissions, type, creator);
 		for(let key in playlist) {
 			if(playlist.hasOwnProperty(key)) {
 				this.playlists[playlist.title][key] = playlist[key];

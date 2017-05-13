@@ -8,12 +8,12 @@ class Neo4jConnector {
     async makeQuery(query, params) {
         let notifyNew = false;
 
-        if(/CREATE \([A-z]*:Playlist/ig.exec(query)) {
+        if(/CREATE.*\:Playlist \{/ig.exec(query)) {
             notifyNew = true;
         }
 
+        let session = this.driver.session();
         try {
-            let session = this.driver.session();
             let results = await session.run(query, params);
             let data = results.records[0].get('playlist').properties;
 
@@ -29,6 +29,9 @@ class Neo4jConnector {
         catch(e) {
             console.error(e);
             return { error: e };
+        }
+        finally {
+            session.close();
         }
     }
 

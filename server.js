@@ -23,7 +23,7 @@ var driver = new neo4j.driver(db.address, neo4j.auth.basic(db.username, db.passw
 var conn = new Neo4jConnector(driver);
 var manager = new PlaylistManager(driver, conn);
 
-var buildPlaylistManager = async function(){
+async function buildPlaylistManager(){
 	console.log('building...');
 
 	let session = driver.session();
@@ -31,18 +31,22 @@ var buildPlaylistManager = async function(){
 		await session.run('CREATE CONSTRAINT on (u:User) ASSERT u.username IS UNIQUE;');
 		await session.run('CREATE CONSTRAINT on (p:Playlist) ASSERT p.title IS UNIQUE;');
 		await session.run('CREATE CONSTRAINT on (s:Song) ASSERT s.url IS UNIQUE;');
-		let results = await session.run('MATCH (p:Playlist) RETURN p AS playlist');
+		let results = await session.run('MATCH (u:User)-[:CREATED]-(p:Playlist) RETURN p AS playlist, u AS user');
 		results.records.forEach(record => {
 			let playlist = record.get('playlist').properties;
+			let username = record.get('user').properties.username;
+			playlist.creator = username;
 			manager.addExistingPlaylist(playlist);
 		});
+		session.close();
 		console.log('finished!');
 	}
 	catch(err) {
 		console.error('erroring in build');
 		console.error(err);
+		session.close();
 	}
-};
+}
 
 // TODO:  still needs to be updated for neo4j
 // var updateStreamUrls = function(callback) {
@@ -116,8 +120,12 @@ passport.use(new LocalStrategy({
 			catch (err) {
 				done(null, false);
 			}
+			finally {
+				session.close();
+			}
 		})
 		.catch((err) => {
+			session.close();
 			done(err);
 		});
 	}
@@ -127,16 +135,19 @@ passport.serializeUser(function(user, done) {
   done(null, user.username);
 });
 
-passport.deserializeUser(function(username, done) {
+passport.deserializeUser(async (username, done) => {
 	let session = driver.session();
-	session.run('MATCH (u:User) WHERE u.username = {username} RETURN u AS user;', { username })
-	.then((results) => {
+	try {
+		let results = await session.run('MATCH (u:User) WHERE u.username = {username} RETURN u AS user;', { username });
 		let user = results.records[0].get('user').properties;
 		done(null, user);
-	})
-	.catch((err) => {
+	}
+	catch(err) {
 		done(err, false);
-	});
+	}
+	finally {
+		session.close();
+	}
 });
 
 app.use(passport.initialize());
@@ -220,7 +231,9 @@ app.post('/sign-up', async (req, res) => {
 			res.status(400).send({ error: 'Username already exists.' });
 			res.end();
 		}
-		
+		finally {
+			session.close();
+		}
 	}
 });
 
@@ -299,6 +312,9 @@ app.post('/song', auth, async (req, res) => {
 		res.sendStatus(409);
 		res.end();
 	}
+	finally {
+		session.close();
+	}
 });
 
 // SongNextHandler
@@ -325,26 +341,53 @@ app.get('/song/next', auth, async (req, res) => {
 // PlaylistHandler
 app.get('/playlist', auth, async (req, res) => {
 	var title = req.query.playlist;
+	let password = req.query.password;
 	if(title){
 		var playlist = manager.getPlaylist(title);
 		playlist.playbackTimer = null;
 		let songs = await playlist.getSongs();
 		playlist.songs = songs;
 		playlist = _.omit(playlist, ['driver', 'conn']);
-		res.json({ playlist });
-		res.end();
+
+		if(playlist.password) {
+			if(!password) {
+				res.sendStatus(401).end();
+			}
+			else if(password !== playlist.password) {
+				res.sendStatus(401).end();
+			}
+			else {
+				playlist.hasPassword = !!playlist.password;
+				playlist = _.omit(playlist, 'password');
+				res.json({ playlist });
+				res.end();
+			}
+		}
+		else {
+			playlist.hasPassword = !!playlist.password;
+			playlist = _.omit(playlist, 'password');
+			res.json({ playlist });
+			res.end();
+		}
 	}
 	else {
 		let session = driver.session();
 		try {
 			let results = await session.run('MATCH (p:Playlist) RETURN p AS playlist;');
-			let playlists = results.records.map(record => record.get('playlist').properties);
+			let playlists = results.records.map(record => {
+				let playlistObject = record.get('playlist').properties;
+				playlistObject.hasPassword = !!playlistObject.password;
+				return _.omit(playlistObject, 'password');
+			});
 			res.json({ playlists: _.orderBy(playlists, playlist => playlist.title, 'desc')});
 		}
 		catch(err) {
 			res.send(err);
 			res.sendStatus(403);
 			res.end();
+		}
+		finally {
+			session.close();
 		}
 	}
 });
@@ -354,9 +397,10 @@ app.put('/playlist', auth, async (req, res) => {
 	var password = req.body.password;
 	var openSubmissions = req.body.openSubmissions;
 	var type = req.body.type;
+	let creator = req.user.username;
 
 	if(title){
-		var playlist = new Playlist(title, category, password, openSubmissions, type);
+		var playlist = new Playlist(title, category, password, openSubmissions, type, creator);
 		await manager.addPlaylist(playlist);
 		res.sendStatus(201);
 		res.end();

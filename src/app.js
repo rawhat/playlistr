@@ -28,9 +28,12 @@ class App extends Component {
     }
 
     authenticate = async () => {
-        let res = await this.isAuthenticated();
-        if(res.status !== 401) {
+        try {
+            let res = await this.isAuthenticated();
             this.setState({ authenticated: true, user: res.data });
+        }
+        catch (err) {
+            this.setState({ authenticated: false, user: null });
         }
     }
 
