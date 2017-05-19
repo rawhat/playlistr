@@ -1,5 +1,4 @@
 import React, { Component } from 'react';
-import { render } from 'react-dom';
 import axios from 'axios';
 import {
     BrowserRouter as Router,
@@ -14,7 +13,7 @@ import Login from './components/login';
 import SignUp from './components/sign-up';
 import Profile from './components/profile';
 
-class App extends Component {
+export default class App extends Component {
     constructor(props) {
         super(props);
         this.state = {
@@ -40,11 +39,6 @@ class App extends Component {
     isAuthenticated = async () => {
         let res = await axios.get('/authenticated');
         return res;
-        // if(res.status !== 401) {
-        //     this.setState({
-        //         authenticated: true
-        //     });
-        // }
     }
 
     render = () => {
@@ -74,5 +68,3 @@ class App extends Component {
         );
     }
 }
-
-render(<App />, document.getElementById('main-panel'));

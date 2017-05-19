@@ -2,6 +2,10 @@ import React, { Component } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 
+import { connect } from 'react-redux';
+
+import { doLogin } from '../ducks/authentication';
+
 class Login extends Component {
     constructor(props) {
         super(props);
@@ -12,26 +16,29 @@ class Login extends Component {
 
     login = async (ev) => {
         ev.preventDefault();
-        this.setState({
-            error: false
-        });
-
         let username = this.username.value;
         let password = this.password.value;
+        this.props.login(username, password);
+        // this.setState({
+        //     error: false
+        // });
 
-        try {
-            let results = await axios.post('/login', {
-                username,
-                password
-            });
+        // let username = this.username.value;
+        // let password = this.password.value;
+
+        // try {
+        //     let results = await axios.post('/login', {
+        //         username,
+        //         password
+        //     });
             
-            this.props.authenticate(results.data.user);
-        }
-        catch(err) {
-            this.setState({
-                error: true
-            });
-        }
+        //     this.props.authenticate(results.data.user);
+        // }
+        // catch(err) {
+        //     this.setState({
+        //         error: true
+        //     });
+        // }
     }
 
     render = () => {
@@ -66,4 +73,18 @@ class Login extends Component {
     }
 }
 
-export default Login;
+const mapStateToProps = (state) => {
+    return {
+        ...state.auth
+    };
+};
+
+const mapDispatchToProps = (dispatch) => {
+    return {
+        login: (username, password) => {
+            dispatch(doLogin(username, password));
+        }
+    };
+};
+
+export default connect(mapStateToProps, mapDispatchToProps)(Login);

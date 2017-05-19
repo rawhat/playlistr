@@ -30,6 +30,7 @@ class Playlist {
 		this.hasPlayed = false;
 		this.driver = null;
 		this.conn = null;
+		this.playbackTimer = null;
 	}
 
 	getCurrentPlaytime() {
