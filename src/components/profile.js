@@ -8,5 +8,5 @@ export default class Profile extends Component {
                 <p>This is a test.</p>
             </div>
         );
-    }
+    };
 }

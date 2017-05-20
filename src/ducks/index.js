@@ -3,8 +3,7 @@ import { routerReducer } from 'react-router-redux';
 
 import authenticationReducer from './authentication';
 
-
 export default combineReducers({
     router: routerReducer,
-    auth: authenticationReducer
+    auth: authenticationReducer,
 });

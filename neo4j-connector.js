@@ -8,7 +8,7 @@ class Neo4jConnector {
     async makeQuery(query, params) {
         let notifyNew = false;
 
-        if(/CREATE.*\:Playlist \{/ig.exec(query)) {
+        if (/CREATE.*\:Playlist \{/ig.exec(query)) {
             notifyNew = true;
         }
 
@@ -17,50 +17,61 @@ class Neo4jConnector {
             let results = await session.run(query, params);
             let data = results.records[0].get('playlist').properties;
 
-            if(notifyNew) {
+            if (notifyNew) {
                 this.notifyNewPlaylistListeners(data);
-            }
-            else {
+            } else {
                 this.notifyPlaylistListeners(data);
             }
 
             return { data, error: null };
-        }
-        catch(e) {
+        } catch (e) {
             console.error(e);
             return { error: e };
-        }
-        finally {
+        } finally {
             session.close();
         }
     }
 
     addPlaylistListener(socket, playlistTitle, listenerFunction) {
-        if(this.playlistListeners.hasOwnProperty(playlistTitle)) {
-            this.playlistListeners = Object.assign({}, this.playlistListeners, { [playlistTitle]: this.playlistListeners[playlistTitle].concat({ socket, listenerFunction }) });
-        }
-        else {
-            this.playlistListeners[playlistTitle] = [{ socket, listenerFunction }];
+        if (this.playlistListeners.hasOwnProperty(playlistTitle)) {
+            this.playlistListeners = Object.assign({}, this.playlistListeners, {
+                [playlistTitle]: this.playlistListeners[playlistTitle].concat({
+                    socket,
+                    listenerFunction,
+                }),
+            });
+        } else {
+            this.playlistListeners[playlistTitle] = [
+                { socket, listenerFunction },
+            ];
         }
     }
 
     addNewPlaylistListener(socket, listenerFunction) {
-        this.newPlaylistListeners = this.newPlaylistListeners.length ? this.newPlaylistListeners.concat({ socket, listenerFunction }) : [{ socket, listenerFunction }];
+        this.newPlaylistListeners = this.newPlaylistListeners.length
+            ? this.newPlaylistListeners.concat({ socket, listenerFunction })
+            : [{ socket, listenerFunction }];
     }
 
     removePlaylistListener(socket, playlistTitle) {
-        if(this.playlistListeners[playlistTitle])
-            this.playlistListeners[playlistTitle] = this.playlistListeners[playlistTitle].filter(obj => obj.socket !== socket);
+        if (this.playlistListeners[playlistTitle])
+            this.playlistListeners[playlistTitle] = this.playlistListeners[
+                playlistTitle
+            ].filter(obj => obj.socket !== socket);
     }
 
     removeNewPlaylistListener(socket) {
-        if(this.newPlaylistListeners)
-            this.newPlaylistListeners = this.newPlaylistListeners.filter(obj => obj.socket !== socket);
+        if (this.newPlaylistListeners)
+            this.newPlaylistListeners = this.newPlaylistListeners.filter(
+                obj => obj.socket !== socket
+            );
     }
 
     notifyPlaylistListeners(data) {
         let playlistTitle = data.title;
-        this.playlistListeners[playlistTitle].forEach(obj => obj.listenerFunction(data));
+        this.playlistListeners[playlistTitle].forEach(obj =>
+            obj.listenerFunction(data)
+        );
     }
 
     notifyNewPlaylistListeners(data) {
@@ -69,5 +80,5 @@ class Neo4jConnector {
 }
 
 module.exports = {
-    Neo4jConnector
+    Neo4jConnector,
 };
