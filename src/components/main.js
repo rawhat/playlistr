@@ -1,5 +1,7 @@
 /* eslint-disable no-console */
 import React, { Component } from 'react';
+import { connect } from 'react-redux';
+import PropTypes from 'prop-types';
 import axios from 'axios';
 import io from 'socket.io-client';
 import _ from 'lodash';
@@ -10,6 +12,8 @@ import CustomAudioBar from './custom-audio-bar';
 import VideoPlayer from './video-player';
 import PlaylistSidebar from './playlist-sidebar';
 import SongArea from './song-area';
+
+import { doFetchPlaylists, doFetchPlaylistByTitle } from '../ducks/playlist';
 
 class MainPage extends Component {
     constructor(props) {
@@ -29,6 +33,13 @@ class MainPage extends Component {
             playlistPasswordError: false,
         };
     }
+
+    static propTypes = {
+        doFetchPlaylists: PropTypes.func,
+        doFetchPlaylistByTitle: PropTypes.func,
+        playlists: PropTypes.array,
+        currentPlaylist: PropTypes.object,
+    };
 
     componentDidMount = async () => {
         this.socket = io.connect();
@@ -54,42 +65,52 @@ class MainPage extends Component {
             });
         });
 
-        let res = await axios.get('/playlist');
-        let data = res.data;
+        // let res = await axios.get('/playlist');
+        // let data = res.data;
 
-        let playlists = _.uniq(_.castArray(data.playlists));
-        this.setState({
-            playlists: _.orderBy(playlists, playlist => playlist.title, 'asc'),
-        });
+        // let playlists = _.uniq(_.castArray(data.playlists));
+        // this.setState({
+        //     playlists: _.orderBy(playlists, playlist => playlist.title, 'asc'),
+        // });
+        this.props.fetchPlaylists();
     };
 
     selectPlaylist = async name => {
-        let playlist = this.state.playlists.find(
+        // let playlist = this.state.playlists.find(
+        //     playlist => playlist.title === name
+        // );
+        // if (!playlist.hasPassword) {
+        //     try {
+        //         let res = await await axios.get(`/playlist?playlist=${name}`);
+        //         this.socket.emit('change-playlist', {
+        //             old_playlist: this.state.selectedPlaylist,
+        //             new_playlist: name,
+        //         });
+        //         this.setState(
+        //             {
+        //                 selectedPlaylist: res.data.playlist.title,
+        //                 currentPlaylist: res.data.playlist,
+        //             },
+        //             () => {
+        //                 this.goLiveOnPlaylist();
+        //             }
+        //         );
+        //     } catch (err) {
+        //         console.error(err);
+        //     }
+        // } else {
+        //     this.setState({
+        //         playlistPasswordAccess: name,
+        //     });
+        // }
+        let playlist = this.props.playlists.find(
             playlist => playlist.title === name
         );
+
         if (!playlist.hasPassword) {
-            try {
-                let res = await await axios.get(`/playlist?playlist=${name}`);
-                this.socket.emit('change-playlist', {
-                    old_playlist: this.state.selectedPlaylist,
-                    new_playlist: name,
-                });
-                this.setState(
-                    {
-                        selectedPlaylist: res.data.playlist.title,
-                        currentPlaylist: res.data.playlist,
-                    },
-                    () => {
-                        this.goLiveOnPlaylist();
-                    }
-                );
-            } catch (err) {
-                console.error(err);
-            }
+            this.props.fetchPlaylistByTitle(name);
         } else {
-            this.setState({
-                playlistPasswordAccess: name,
-            });
+            this.props.fetchPasswordPlaylistByTitle(name);
         }
     };
 
@@ -203,8 +224,9 @@ class MainPage extends Component {
         var goLiveLink = null;
         var exportPlaylistLink = null;
         if (
-            !_.isEqual(this.state.currentPlaylist, {}) &&
-            this.state.currentPlaylist.songs.length !== 0
+            this.props.currentPlaylist &&
+            this.props.currentPlaylist.hasOwnProperty('songs') &&
+            this.props.currentPlaylist.songs.length !== 0
         ) {
             goLiveLink = (
                 <a href="#" onClick={this.goLiveOnPlaylist.bind(this)}>
@@ -212,7 +234,7 @@ class MainPage extends Component {
                 </a>
             );
             var songList = _.map(
-                _.map(this.state.currentPlaylist.songs, 'url'),
+                _.map(this.props.currentPlaylist.songs, 'url'),
                 song => {
                     return song.split('?v=')[1];
                 }
@@ -235,7 +257,10 @@ class MainPage extends Component {
         var audioBar = null;
         var contentSection = null;
 
-        if (this.state.currentPlaylist.type === 'music') {
+        if (
+            this.props.currentPlaylist &&
+            this.props.currentPlaylist.type === 'music'
+        ) {
             audioBar = (
                 <CustomAudioBar
                     currentSong={this.state.currentSong}
@@ -254,7 +279,10 @@ class MainPage extends Component {
                     title={this.state.currentPlaylist.title}
                 />
             );
-        } else if (this.state.currentPlaylist.type === 'video') {
+        } else if (
+            this.props.currentPlaylist &&
+            this.props.currentPlaylist.type === 'video'
+        ) {
             contentSection = (
                 <div className="video-area">
                     <VideoPlayer
@@ -275,30 +303,30 @@ class MainPage extends Component {
             );
         }
 
-        var addSongArea = this.state.currentPlaylist.title === undefined
+        var addSongArea = this.props.currentPlaylist &&
+            this.props.currentPlaylist.title === undefined
             ? null
             : <AddSongArea addSongCallback={this.addSongCallback} />;
         var selectedPlaylistIndex = _.findIndex(
-            this.state.playlists,
+            this.props.playlists,
             playlist => {
                 return (
-                    this.state.currentPlaylist &&
-                    this.state.currentPlaylist.title === playlist.title
+                    this.props.currentPlaylist &&
+                    this.props.currentPlaylist.title === playlist.title
                 );
             }
         );
-        var currentSongIndex = _.findIndex(
-            this.state.currentPlaylist.songs,
-            song => {
+        var currentSongIndex =
+            this.props.currentPlaylist &&
+            _.findIndex(this.props.currentPlaylist.songs, song => {
                 return (
                     this.state.currentSong &&
                     this.state.currentSong === song.streamUrl
                 );
-            }
-        );
+            });
 
         return (
-            <div>
+            <div style={{ marginTop: 60 }}>
                 <Row className="middle-section">
                     <Col md={2} sm={12}>
                         <Row>
@@ -307,7 +335,7 @@ class MainPage extends Component {
                         <Row>
                             <PlaylistSidebar
                                 playlistSelector={this.selectPlaylist}
-                                playlists={this.state.playlists}
+                                playlists={this.props.playlists}
                                 selectedPlaylistIndex={selectedPlaylistIndex}
                                 selectProtectedPlaylist={
                                     this.selectProtectedPlaylist
@@ -346,4 +374,18 @@ class MainPage extends Component {
     };
 }
 
-export default MainPage;
+const mapStateToProps = state => {
+    return {
+        playlists: state.playlist.playlists,
+        currentPlaylist: state.playlist.currentPlaylist,
+    };
+};
+
+const mapDispatchToProps = dispatch => {
+    return {
+        fetchPlaylists: () => dispatch(doFetchPlaylists()),
+        fetchPlaylistByTitle: title => dispatch(doFetchPlaylistByTitle(title)),
+    };
+};
+
+export default connect(mapStateToProps, mapDispatchToProps)(MainPage);

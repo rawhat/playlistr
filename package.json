@@ -42,9 +42,10 @@
   "license": "ISC",
   "devDependencies": {
     "babel-polyfill": "^6.23.0",
-    "webpack": "^2.5.1",
     "eslint": "^3.19.0",
     "eslint-config-es2015-react": "^0.2.1",
-    "eslint-plugin-react": "^7.0.0"
+    "eslint-plugin-react": "^7.0.0",
+    "prop-types": "^15.5.10",
+    "webpack": "^2.5.1"
   }
 }

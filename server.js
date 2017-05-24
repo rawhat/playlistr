@@ -58,8 +58,10 @@ async function buildPlaylistManager() {
     }
 }
 
-// TODO:  still needs to be updated for neo4j
-// var updateStreamUrls = function(callback) {
+// // TODO:  still needs to be updated for neo4j
+// async function updateStreamUrls() {
+//     let session = driver.session();
+
 // 	r.connect({host: 'localhost', port: 28015}, (err, conn) => {
 // 		var songObj = {};
 // 		r.db('Playlistr').table('songs').run(conn, (err, res) => {
@@ -96,7 +98,7 @@ async function buildPlaylistManager() {
 // 			});
 // 		});
 // 	});
-// };
+// }
 
 var app = express();
 
@@ -181,7 +183,7 @@ const auth = (req, res, next) => {
 };
 
 app.post('/login', passport.authenticate('local'), (req, res) => {
-    res.sendStatus(200);
+    res.send(_.omit(req.user, 'password'));
     res.end();
 });
 
@@ -191,6 +193,7 @@ app.get('/logout', function(req, res) {
 });
 
 app.get('/authenticated', auth, (req, res) => {
+    console.log(req.user);
     res.send(_.omit(req.user, 'password'));
     res.end();
 });
@@ -214,7 +217,7 @@ app.post('/sign-up', async (req, res) => {
             let user = results.records[0].get('user').properties;
             req.login(user, err => {
                 if (!err) {
-                    res.sendStatus(201);
+                    res.send(_.omit(user, 'password'));
                     res.end();
                 } else res.redirect('/login');
             });
@@ -391,6 +394,7 @@ app.get('/playlist', auth, async (req, res) => {
     }
 });
 app.put('/playlist', auth, async (req, res) => {
+    console.log(req.body);
     var title = req.body.playlist;
     var category = req.body.category;
     var password = req.body.password;
@@ -408,7 +412,17 @@ app.put('/playlist', auth, async (req, res) => {
             creator
         );
         await manager.addPlaylist(playlist);
-        res.sendStatus(201);
+        res
+            .status(201)
+            .send(
+                _.omit(playlist, [
+                    'password',
+                    'hasPlayed',
+                    'driver',
+                    'conn',
+                    'playbackTimer',
+                ])
+            );
         res.end();
     } else {
         res.sendStatus(400);

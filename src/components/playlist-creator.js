@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import axios from 'axios';
+import { connect } from 'react-redux';
 import { Button, Modal } from 'react-bootstrap';
 
 const ModalHeader = Modal.Header;
@@ -7,6 +7,8 @@ const ModalBody = Modal.Body;
 const ModalFooter = Modal.Footer;
 
 import PlaylistForm from './playlist-form';
+
+import { doCreatePlaylist } from '../ducks/playlist';
 
 class PlaylistCreator extends Component {
     constructor(props) {
@@ -38,31 +40,64 @@ class PlaylistCreator extends Component {
 
     createPlaylist = async ev => {
         ev.preventDefault();
-        this.makePlaylist = axios.put('/playlist', {
-            playlist: this.state.playlistName,
-            category: this.state.playlistCategory,
-            password: this.state.playlistPassword,
-            openSubmissions: this.state.playlistOpenSubmissions,
-            type: this.state.playlistType,
-        });
 
-        try {
-            let res = await this.makePlaylist;
-            if (res.status === 409) {
-                this.setState({
-                    nameTaken: true,
-                });
-            } else if (res.status === 400) {
-                this.setState({
-                    hasError: true,
-                });
-            } else {
-                this.props.playlistSelector(this.state.playlistName);
-                this.hideModal();
-            }
-        } catch (err) {
-            console.error(err);
-        }
+        this.props.createPlaylist(
+            this.state.playlistName,
+            this.state.playlistCategory,
+            this.state.playlistPassword,
+            this.state.playlistOpenSubmissions,
+            this.state.playlistType
+        );
+
+        // }
+
+        // this.makePlaylist = axios.put('/playlist', {
+
+        //     playlist: this.state.playlistName,
+
+        //     category: this.state.playlistCategory,
+
+        //     password: this.state.playlistPassword,
+
+        //     openSubmissions: this.state.playlistOpenSubmissions,
+
+        //     type: this.state.playlistType,
+
+        // });
+
+        // try {
+
+        //     let res = await this.makePlaylist;
+
+        //     if (res.status === 409) {
+
+        //         this.setState({
+
+        //             nameTaken: true,
+
+        //         });
+
+        //     } else if (res.status === 400) {
+
+        //         this.setState({
+
+        //             hasError: true,
+
+        //         });
+
+        //     } else {
+
+        //         this.props.playlistSelector(this.state.playlistName);
+
+        //         this.hideModal();
+
+        //     }
+
+        // } catch (err) {
+
+        //     console.error(err);
+
+        // }
     };
 
     componentWillUnmount = () => {
@@ -126,4 +161,25 @@ PlaylistCreator.propTypes = {
     playlistSelector: React.PropTypes.func,
 };
 
-export default PlaylistCreator;
+const mapStateToProps = state => {
+    return {
+        createPlaylistError: state.playlist.createPlaylistError,
+    };
+};
+
+const mapDispatchToProps = dispatch => {
+    return {
+        createPlaylist: (playlist, category, password, openSubmissions, type) =>
+            dispatch(
+                doCreatePlaylist(
+                    playlist,
+                    category,
+                    password,
+                    openSubmissions,
+                    type
+                )
+            ),
+    };
+};
+
+export default connect(mapStateToProps, mapDispatchToProps)(PlaylistCreator);

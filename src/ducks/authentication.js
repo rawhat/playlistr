@@ -1,12 +1,15 @@
 import { handle } from 'redux-pack';
 import axios from 'axios';
 
-export const LOGIN_USER = 'LOGIN_USER';
-export const SIGNUP_USER = 'SIGNUP_USER';
+export const LOGIN_USER = 'playlistr/authentication/LOGIN_USER';
+export const SIGNUP_USER = 'playlistr/authentication/SIGNUP_USER';
+export const CHECK_AUTH_STATUS = 'playlistr/authentication/CHECK_AUTH_STATUS';
 
 const initialState = {
-    isLoading: null,
-    authenticationError: null,
+    isLoading: false,
+    loginAuthError: false,
+    signupAuthError: false,
+    authStatus: false,
     user: null,
 };
 
@@ -19,15 +22,22 @@ export default function authenticationReducer(state = initialState, action) {
                 start: prevState => ({
                     ...prevState,
                     isLoading: true,
-                    authenticationError: null,
+                    loginAuthError: null,
                     user: null,
                 }),
-                finish: prevState => ({ ...prevState, isLoading: false }),
+                finish: prevState => ({
+                    ...prevState,
+                    isLoading: false,
+                }),
                 failure: prevState => ({
                     ...prevState,
-                    authenticationError: payload,
+                    loginAuthError: true,
                 }),
-                success: prevState => ({ ...prevState, user: payload }),
+                success: prevState => ({
+                    ...prevState,
+                    user: payload.data,
+                    authStatus: true,
+                }),
             });
         }
 
@@ -36,15 +46,45 @@ export default function authenticationReducer(state = initialState, action) {
                 start: prevState => ({
                     ...prevState,
                     isLoading: true,
-                    authenticationError: null,
+                    signupAuthError: null,
                     user: null,
                 }),
-                finish: prevState => ({ ...prevState, isLoading: false }),
+                finish: prevState => ({
+                    ...prevState,
+                    isLoading: false,
+                }),
                 failure: prevState => ({
                     ...prevState,
-                    authenticationError: payload,
+                    signupAuthError: true,
                 }),
-                success: prevState => ({ ...prevState, user: payload }),
+                success: prevState => ({
+                    ...prevState,
+                    user: payload.data,
+                    authStatus: true,
+                }),
+            });
+        }
+
+        case CHECK_AUTH_STATUS: {
+            return handle(state, action, {
+                start: prevState => ({
+                    ...prevState,
+                    isLoading: true,
+                    user: null,
+                }),
+                finish: prevState => ({
+                    ...prevState,
+                    isLoading: false,
+                }),
+                success: prevState => ({
+                    ...prevState,
+                    user: payload.data,
+                    authStatus: true,
+                }),
+                failure: prevState => ({
+                    ...prevState,
+                    authStatus: false,
+                }),
             });
         }
 
@@ -70,5 +110,12 @@ export function doSignup(username, email, password, password_repeat) {
             password,
             password_repeat,
         }),
+    };
+}
+
+export function doAuthCheck() {
+    return {
+        type: CHECK_AUTH_STATUS,
+        promise: axios.get('/authenticated'),
     };
 }

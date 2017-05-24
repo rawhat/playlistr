@@ -1,47 +1,44 @@
 import React, { Component } from 'react';
-import { Redirect } from 'react-router-dom';
-import axios from 'axios';
+import PropTypes from 'prop-types';
+import { connect } from 'react-redux';
+import { Redirect } from 'react-router';
 
-const withAuthentication = authStatus => redirectionPath => WrappedComponent => {
+import { doAuthCheck } from '../ducks/authentication';
+
+const withAuthentication = authStatus => WrappedComponent => {
     class App extends Component {
-        constructor(props) {
-            super(props);
-            this.state = {
-                authenticated: false,
-                user: null,
-            };
+        static propTypes = {
+            error: PropTypes.bool,
+            authCheck: PropTypes.func,
+            authStatus: PropTypes.bool,
+            redirect: PropTypes.func,
+        };
+
+        componentWillMount() {
+            this.props.authCheck();
         }
 
-        componentDidMount = async () => {
-            await this.authenticate();
-        };
-
-        authenticate = async () => {
-            try {
-                let res = await this.isAuthenticated();
-                this.setState({ authenticated: true, user: res.data });
-            } catch (err) {
-                this.setState({ authenticated: false, user: null });
-            }
-        };
-
-        isAuthenticated = async () => {
-            let res = await axios.get('/authenticated');
-            return res;
-        };
-
         render = () => {
-            return this.state.authenticated === authStatus
-                ? <Redirect to={redirectionPath} />
-                : <WrappedComponent
-                      {...this.props}
-                      user={this.state.user}
-                      authenticate={this.authenticate}
-                  />;
+            return this.props.authStatus === authStatus
+                ? <WrappedComponent {...this.props} />
+                : <Redirect to={authStatus ? '/login' : '/'} />;
         };
     }
 
-    return App;
+    const mapStateToProps = state => {
+        return {
+            user: state.auth.user,
+            authStatus: state.auth.authStatus,
+        };
+    };
+
+    const mapDispatchToProps = dispatch => {
+        return {
+            authCheck: () => dispatch(doAuthCheck()),
+        };
+    };
+
+    return connect(mapStateToProps, mapDispatchToProps)(App);
 };
 
 export default withAuthentication;
