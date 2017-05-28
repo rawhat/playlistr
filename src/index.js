@@ -1,33 +1,43 @@
 import React from 'react';
 import { render } from 'react-dom';
 import App from './app';
+import rxjs from 'rxjs';
 
 import { createStore, applyMiddleware, compose } from 'redux';
 import { Provider } from 'react-redux';
-import { middleware as reduxPackMiddleware } from 'redux-pack';
+// import { middleware as reduxPackMiddleware } from 'redux-pack';
 
-import createHistory from 'history/createBrowserHistory';
-import { ConnectedRouter, routerMiddleware } from 'react-router-redux';
+import { routerMiddleware } from 'react-router-redux';
 
-import rootReducer from './ducks/index';
+import { createEpicMiddleware } from 'redux-observable';
 
-const composeEnhancers = process.NODE_ENV === 'production'
-    ? compose
-    : window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
+import socketMiddleware from './middleware/socket';
 
-const history = createHistory();
+import rootReducer, { rootEpic } from './ducks/index';
+
+const composeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
+
+// const history = createHistory();
 const middleware = routerMiddleware(history);
+
+const epicMiddleware = createEpicMiddleware(rootEpic);
 
 const store = createStore(
     rootReducer,
-    composeEnhancers(applyMiddleware(middleware, reduxPackMiddleware))
+    composeEnhancers(
+        applyMiddleware(
+            epicMiddleware,
+            middleware,
+            socketMiddleware
+
+            // reduxPackMiddleware
+        )
+    )
 );
 
 render(
     <Provider store={store}>
-        <ConnectedRouter history={history}>
-            <App />
-        </ConnectedRouter>
+        <App />
     </Provider>,
     document.getElementById('main-panel')
 );

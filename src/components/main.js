@@ -3,7 +3,6 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import axios from 'axios';
-import io from 'socket.io-client';
 import _ from 'lodash';
 import { Row, Col } from 'react-bootstrap';
 
@@ -14,6 +13,12 @@ import PlaylistSidebar from './playlist-sidebar';
 import SongArea from './song-area';
 
 import { doFetchPlaylists, doFetchPlaylistByTitle } from '../ducks/playlist';
+import {
+    doSocketConnect,
+    doSocketDisconnect,
+    doSocketChangePlaylist,
+} from '../ducks/push-socket';
+import { doSignOut } from '../ducks/authentication';
 
 class MainPage extends Component {
     constructor(props) {
@@ -35,35 +40,39 @@ class MainPage extends Component {
     }
 
     static propTypes = {
-        doFetchPlaylists: PropTypes.func,
-        doFetchPlaylistByTitle: PropTypes.func,
+        fetchPlaylists: PropTypes.func,
+        fetchPlaylistByTitle: PropTypes.func,
+        socketConnect: PropTypes.func,
+        socketDisconnect: PropTypes.func,
         playlists: PropTypes.array,
         currentPlaylist: PropTypes.object,
     };
 
-    componentDidMount = async () => {
-        this.socket = io.connect();
+    componentWillMount = () => {};
 
-        this.socket.on('new-playlist', msg => {
-            this.setState({
-                playlists: _.orderBy(
-                    _.uniq(_.concat(this.state.playlists, msg.playlist)),
-                    playlist => playlist.title,
-                    'asc'
-                ),
-            });
-        });
+    componentDidMount = () => {
+        // this.socket = io.connect();
+        // this.socket.on('new-playlist', msg => {
+        //     this.setState({
+        //         playlists: _.orderBy(
+        //             _.uniq(_.concat(this.state.playlists, msg.playlist)),
+        //             playlist => playlist.title,
+        //             'asc'
+        //         ),
+        //     });
+        // });
 
-        this.socket.on('new-song', async msg => {
-            console.log(msg);
-            let response = await axios.get(
-                `/playlist?playlist=${this.state.currentPlaylist.title}`
-            );
-            let playlist = response.data.playlist;
-            this.setState({
-                currentPlaylist: playlist,
-            });
-        });
+        // this.socket.on('new-song', async msg => {
+        //     console.log(msg);
+        //     let response = await axios.get(
+        //         `/playlist?playlist=${this.state.currentPlaylist.title}`
+        //     );
+        //     let playlist = response.data.playlist;
+        //     this.setState({
+        //         currentPlaylist: playlist,
+        //     });
+        // });
+        this.props.socketConnect();
 
         // let res = await axios.get('/playlist');
         // let data = res.data;
@@ -73,6 +82,10 @@ class MainPage extends Component {
         //     playlists: _.orderBy(playlists, playlist => playlist.title, 'asc'),
         // });
         this.props.fetchPlaylists();
+    };
+
+    componentWillUnmount = () => {
+        this.props.socketDisconnect();
     };
 
     selectPlaylist = async name => {
@@ -109,29 +122,11 @@ class MainPage extends Component {
 
         if (!playlist.hasPassword) {
             this.props.fetchPlaylistByTitle(name);
-        } else {
-            this.props.fetchPasswordPlaylistByTitle(name);
-        }
-    };
-
-    selectProtectedPlaylist = async (title, password) => {
-        try {
-            let res = await axios.get(
-                `/playlist?playlist=${title}&password=${password}`
-            );
-            this.setState({
-                selectedPlaylist: res.data.playlist.title,
-                currentPlaylist: res.data.playlist,
-            });
-            return true;
-        } catch (err) {
-            return false;
         }
     };
 
     signoutCallback = async () => {
-        await axios.get('/signout');
-        this.props.history.push('/');
+        this.props.signOut();
     };
 
     addSongCallback = async url => {
@@ -295,15 +290,16 @@ class MainPage extends Component {
                         totalTime={totalTime}
                     />
                     <SongArea
-                        songs={this.state.currentPlaylist.songs}
+                        songs={this.props.currentPlaylist.songs}
                         currentSongIndex={currentSongIndex}
-                        title={this.state.currentPlaylist.title}
+                        title={this.props.currentPlaylist.title}
                     />
                 </div>
             );
         }
 
-        var addSongArea = this.props.currentPlaylist &&
+        var addSongArea = _.isEqual({}, this.props.currentPlaylist) ||
+            !this.props.currentPlaylist ||
             this.props.currentPlaylist.title === undefined
             ? null
             : <AddSongArea addSongCallback={this.addSongCallback} />;
@@ -376,8 +372,9 @@ class MainPage extends Component {
 
 const mapStateToProps = state => {
     return {
-        playlists: state.playlist.playlists,
-        currentPlaylist: state.playlist.currentPlaylist,
+        // playlists: state.playlist.playlists,
+        // currentPlaylist: state.playlist.currentPlaylist,
+        ...state.playlist,
     };
 };
 
@@ -385,6 +382,11 @@ const mapDispatchToProps = dispatch => {
     return {
         fetchPlaylists: () => dispatch(doFetchPlaylists()),
         fetchPlaylistByTitle: title => dispatch(doFetchPlaylistByTitle(title)),
+        socketConnect: () => dispatch(doSocketConnect()),
+        socketDisconnect: () => dispatch(doSocketDisconnect()),
+        socketChange: (newPlaylist, oldPlaylist) =>
+            dispatch(doSocketChangePlaylist(newPlaylist, oldPlaylist)),
+        signOut: () => dispatch(doSignOut()),
     };
 };
 

@@ -1,38 +1,15 @@
 import React, { Component } from 'react';
-import axios from 'axios';
+import { connect } from 'react-redux';
+import { doSignup } from '../ducks/authentication';
 
 class SignUp extends Component {
-    constructor(props) {
-        super(props);
-        this.state = {
-            error: null,
-        };
-    }
-
     signUp = async () => {
         let username = this.username.value;
         let email = this.email.value;
         let password = this.password.value;
         let password_repeat = this.password_repeat.value;
 
-        this.setState({
-            error: null,
-        });
-
-        try {
-            let results = await axios.post('/sign-up', {
-                username,
-                email,
-                password,
-                password_repeat,
-            });
-            this.props.authenticate(results.data.user);
-        } catch (err) {
-            let msg = err.response.data.error;
-            this.setState({
-                error: msg,
-            });
-        }
+        this.props.signup(username, email, password, password_repeat);
     };
 
     render = () => {
@@ -92,8 +69,8 @@ class SignUp extends Component {
                                 />
                             </label>
                         </div>
-                        {this.state.error
-                            ? <p className="bg-danger">{this.state.error}</p>
+                        {this.props.error
+                            ? <p className="bg-danger">{this.props.error}</p>
                             : null}
                         <div className="row">
                             <button
@@ -110,4 +87,17 @@ class SignUp extends Component {
     };
 }
 
-export default SignUp;
+const mapStateToProps = state => {
+    return {
+        error: state.auth.signupAuthError,
+    };
+};
+
+const mapDispatchToProps = dispatch => {
+    return {
+        signup: (username, email, password, password_repeat) =>
+            dispatch(doSignup(username, email, password, password_repeat)),
+    };
+};
+
+export default connect(mapStateToProps, mapDispatchToProps)(SignUp);

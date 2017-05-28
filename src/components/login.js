@@ -13,7 +13,7 @@ class Login extends Component {
         loginAuthError: PropTypes.bool,
     };
 
-    login = async ev => {
+    login = ev => {
         ev.preventDefault();
         let username = this.username.value;
         let password = this.password.value;

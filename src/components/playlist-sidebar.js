@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import _ from 'lodash';
 
 import Playlist from './playlist';
+import PasswordPlaylist from './password-playlist';
 import PlaylistCreator from './playlist-creator';
 
 class PlaylistSidebar extends Component {
@@ -17,23 +18,28 @@ class PlaylistSidebar extends Component {
                     {_.map(this.props.playlists, (playlist, index) => {
                         var selected =
                             index == this.props.selectedPlaylistIndex;
-                        return (
-                            <Playlist
-                                playlistSelector={this.playlistSelector.bind(
-                                    null,
-                                    playlist.title
-                                )}
-                                selectProtectedPlaylist={
-                                    this.props.selectProtectedPlaylist
-                                }
-                                hasPassword={playlist.hasPassword}
-                                passwordOverlay={this.props.passwordOverlay}
-                                name={playlist.title}
-                                key={index}
-                                selected={selected}
-                                type={playlist.type}
-                            />
-                        );
+                        return playlist.hasPassword
+                            ? <PasswordPlaylist
+                                  name={playlist.title}
+                                  key={index}
+                                  selected={selected}
+                                  type={playlist.type}
+                              />
+                            : <Playlist
+                                  playlistSelector={this.playlistSelector.bind(
+                                      null,
+                                      playlist.title
+                                  )}
+                                  selectProtectedPlaylist={
+                                      this.props.selectProtectedPlaylist
+                                  }
+                                  hasPassword={playlist.hasPassword}
+                                  passwordOverlay={this.props.passwordOverlay}
+                                  name={playlist.title}
+                                  key={index}
+                                  selected={selected}
+                                  type={playlist.type}
+                              />;
                     })}
                 </div>
             );

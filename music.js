@@ -255,6 +255,7 @@ class PlaylistManager {
                 throw Error(error);
             }
         } else {
+            console.log('failed!');
             return null;
 
             // callback(false);

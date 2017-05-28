@@ -8,14 +8,17 @@ const ModalFooter = Modal.Footer;
 
 import PlaylistForm from './playlist-form';
 
-import { doCreatePlaylist } from '../ducks/playlist';
+import {
+    doCreatePlaylist,
+    doShowCreatePlaylistModal,
+    doHideCreatePlaylistModal,
+} from '../ducks/playlist';
 
 class PlaylistCreator extends Component {
     constructor(props) {
         super(props);
 
         this.state = {
-            isShown: false,
             playlistName: '',
             playlistCategory: '',
             playlistPassword: '',
@@ -25,18 +28,6 @@ class PlaylistCreator extends Component {
             nameTaken: false,
         };
     }
-
-    showModal = () => {
-        this.setState({
-            isShown: true,
-        });
-    };
-
-    hideModal = () => {
-        this.setState({
-            isShown: false,
-        });
-    };
 
     createPlaylist = async ev => {
         ev.preventDefault();
@@ -48,60 +39,6 @@ class PlaylistCreator extends Component {
             this.state.playlistOpenSubmissions,
             this.state.playlistType
         );
-
-        // }
-
-        // this.makePlaylist = axios.put('/playlist', {
-
-        //     playlist: this.state.playlistName,
-
-        //     category: this.state.playlistCategory,
-
-        //     password: this.state.playlistPassword,
-
-        //     openSubmissions: this.state.playlistOpenSubmissions,
-
-        //     type: this.state.playlistType,
-
-        // });
-
-        // try {
-
-        //     let res = await this.makePlaylist;
-
-        //     if (res.status === 409) {
-
-        //         this.setState({
-
-        //             nameTaken: true,
-
-        //         });
-
-        //     } else if (res.status === 400) {
-
-        //         this.setState({
-
-        //             hasError: true,
-
-        //         });
-
-        //     } else {
-
-        //         this.props.playlistSelector(this.state.playlistName);
-
-        //         this.hideModal();
-
-        //     }
-
-        // } catch (err) {
-
-        //     console.error(err);
-
-        // }
-    };
-
-    componentWillUnmount = () => {
-        if (this.makePlaylist) this.makePlaylist.cancel();
     };
 
     onUserInput = (name, category, password, open, type) => {
@@ -122,7 +59,7 @@ class PlaylistCreator extends Component {
             <div>
                 <Button
                     bsStyle="primary"
-                    onClick={this.showModal}
+                    onClick={this.props.showModal}
                     style={{
                         width: '80%',
                         left: '10%',
@@ -133,11 +70,14 @@ class PlaylistCreator extends Component {
                     Create Playlist
                 </Button>
 
-                <Modal show={this.state.isShown} onHide={this.hideModal}>
+                <Modal
+                    show={this.props.creatingPlaylist}
+                    onHide={this.props.hideModal}
+                >
                     <ModalHeader closeButton>Create New Playlist</ModalHeader>
                     <ModalBody>
                         <PlaylistForm
-                            hasError={this.state.hasError}
+                            hasError={this.props.createPlaylistError}
                             createPlaylist={this.createPlaylist}
                             onUserInput={this.onUserInput}
                             playlistName={this.state.playlistName}
@@ -164,6 +104,8 @@ PlaylistCreator.propTypes = {
 const mapStateToProps = state => {
     return {
         createPlaylistError: state.playlist.createPlaylistError,
+        creatingPlaylist: state.playlist.creatingPlaylist,
+        createdPlaylist: state.playlist.playlistCreated,
     };
 };
 
@@ -179,6 +121,8 @@ const mapDispatchToProps = dispatch => {
                     type
                 )
             ),
+        showModal: () => dispatch(doShowCreatePlaylistModal()),
+        hideModal: () => dispatch(doHideCreatePlaylistModal()),
     };
 };
 

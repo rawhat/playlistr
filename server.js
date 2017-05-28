@@ -193,7 +193,6 @@ app.get('/logout', function(req, res) {
 });
 
 app.get('/authenticated', auth, (req, res) => {
-    console.log(req.user);
     res.send(_.omit(req.user, 'password'));
     res.end();
 });
@@ -339,9 +338,9 @@ app.get('/playlist', auth, async (req, res) => {
     var title = req.query.playlist;
     let password = req.query.password;
     if (title) {
-        console.log(`getting: ${title}`);
+        // console.log(`getting: ${title}`);
         var playlist = manager.getPlaylist(title);
-        console.log(manager);
+        // console.log(manager);
         playlist.playbackTimer = null;
         let songs = await playlist.getSongs();
         playlist.songs = songs;
@@ -394,7 +393,6 @@ app.get('/playlist', auth, async (req, res) => {
     }
 });
 app.put('/playlist', auth, async (req, res) => {
-    console.log(req.body);
     var title = req.body.playlist;
     var category = req.body.category;
     var password = req.body.password;
