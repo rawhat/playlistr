@@ -1,8 +1,14 @@
 import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { doSignup } from '../ducks/authentication';
 
 class SignUp extends Component {
+    static propTypes = {
+        signup: PropTypes.func,
+        error: PropTypes.string
+    }
+
     signUp = async () => {
         let username = this.username.value;
         let email = this.email.value;

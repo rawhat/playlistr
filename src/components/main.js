@@ -2,7 +2,6 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import axios from 'axios';
 import _ from 'lodash';
 import { Row, Col } from 'react-bootstrap';
 
@@ -12,7 +11,11 @@ import VideoPlayer from './video-player';
 import PlaylistSidebar from './playlist-sidebar';
 import SongArea from './song-area';
 
-import { doFetchPlaylists, doFetchPlaylistByTitle } from '../ducks/playlist';
+import {
+    doFetchPlaylists,
+    doFetchPlaylistByTitle,
+    doGoLiveOnCurrentPlaylist,
+} from '../ducks/playlist';
 import {
     doSocketConnect,
     doSocketDisconnect,
@@ -48,39 +51,8 @@ class MainPage extends Component {
         currentPlaylist: PropTypes.object,
     };
 
-    componentWillMount = () => {};
-
     componentDidMount = () => {
-        // this.socket = io.connect();
-        // this.socket.on('new-playlist', msg => {
-        //     this.setState({
-        //         playlists: _.orderBy(
-        //             _.uniq(_.concat(this.state.playlists, msg.playlist)),
-        //             playlist => playlist.title,
-        //             'asc'
-        //         ),
-        //     });
-        // });
-
-        // this.socket.on('new-song', async msg => {
-        //     console.log(msg);
-        //     let response = await axios.get(
-        //         `/playlist?playlist=${this.state.currentPlaylist.title}`
-        //     );
-        //     let playlist = response.data.playlist;
-        //     this.setState({
-        //         currentPlaylist: playlist,
-        //     });
-        // });
         this.props.socketConnect();
-
-        // let res = await axios.get('/playlist');
-        // let data = res.data;
-
-        // let playlists = _.uniq(_.castArray(data.playlists));
-        // this.setState({
-        //     playlists: _.orderBy(playlists, playlist => playlist.title, 'asc'),
-        // });
         this.props.fetchPlaylists();
     };
 
@@ -89,33 +61,6 @@ class MainPage extends Component {
     };
 
     selectPlaylist = async name => {
-        // let playlist = this.state.playlists.find(
-        //     playlist => playlist.title === name
-        // );
-        // if (!playlist.hasPassword) {
-        //     try {
-        //         let res = await await axios.get(`/playlist?playlist=${name}`);
-        //         this.socket.emit('change-playlist', {
-        //             old_playlist: this.state.selectedPlaylist,
-        //             new_playlist: name,
-        //         });
-        //         this.setState(
-        //             {
-        //                 selectedPlaylist: res.data.playlist.title,
-        //                 currentPlaylist: res.data.playlist,
-        //             },
-        //             () => {
-        //                 this.goLiveOnPlaylist();
-        //             }
-        //         );
-        //     } catch (err) {
-        //         console.error(err);
-        //     }
-        // } else {
-        //     this.setState({
-        //         playlistPasswordAccess: name,
-        //     });
-        // }
         let playlist = this.props.playlists.find(
             playlist => playlist.title === name
         );
@@ -125,93 +70,9 @@ class MainPage extends Component {
         }
     };
 
-    signoutCallback = async () => {
-        this.props.signOut();
-    };
-
-    addSongCallback = async url => {
-        if (url) {
-            console.log({
-                playlist: this.state.selectedPlaylist,
-                songUrl: url,
-            });
-            try {
-                let res = await axios.put('/song', {
-                    playlist: this.state.selectedPlaylist,
-                    type: this.state.currentPlaylist.type,
-                    songUrl: url,
-                });
-                if (res.status === 400) {
-                    console.log('Server error.  Check it out.');
-                }
-            } catch (err) {
-                console.error(err);
-            }
-        }
-    };
-
     timeRegistered = () => {
         this.setState({
             currentPlayTime: null,
-        });
-    };
-
-    getNextSong = async () => {
-        try {
-            let res = await axios.get(
-                '/song/next?playlist=' + this.state.currentPlaylist.title
-            );
-            let json = res.data;
-            if (json.streamUrl !== null) {
-                this.setState({
-                    currentSong: json.songUrl,
-                    currentPlayTime: json.time,
-                    paused: false,
-                });
-            } else {
-                this.setState({
-                    currentSong: '',
-                    paused: true,
-                });
-            }
-        } catch (err) {
-            console.error(err);
-        }
-    };
-
-    goLiveOnPlaylist = async event => {
-        if (event) event.preventDefault();
-        try {
-            let res = await axios.get(
-                '/song?playlist=' + this.state.currentPlaylist.title
-            );
-            let json = res.data;
-
-            if (json.songUrl != this.state.currentSong) {
-                this.setState({
-                    currentSong: json.songUrl,
-                    currentPlayTime: json.time,
-                    paused: false,
-                });
-            } else if (json.songUrl === '') {
-                this.setState({
-                    currentPlaytime: 0,
-                    paused: true,
-                });
-            } else {
-                this.setState({
-                    currentPlayTime: json.time,
-                    paused: false,
-                });
-            }
-        } catch (err) {
-            console.error(err);
-        }
-    };
-
-    setPaused = paused => {
-        this.setState({
-            paused: paused,
         });
     };
 
@@ -224,7 +85,7 @@ class MainPage extends Component {
             this.props.currentPlaylist.songs.length !== 0
         ) {
             goLiveLink = (
-                <a href="#" onClick={this.goLiveOnPlaylist.bind(this)}>
+                <a href="#" onClick={() => this.props.goLive()}>
                     Go Live
                 </a>
             );
@@ -247,8 +108,6 @@ class MainPage extends Component {
             );
         }
 
-        var totalTime = this.state.currentPlaylist.length;
-
         var audioBar = null;
         var contentSection = null;
 
@@ -256,22 +115,12 @@ class MainPage extends Component {
             this.props.currentPlaylist &&
             this.props.currentPlaylist.type === 'music'
         ) {
-            audioBar = (
-                <CustomAudioBar
-                    currentSong={this.state.currentSong}
-                    currentTime={this.state.currentPlayTime}
-                    paused={this.setPaused}
-                    playOnLoad={!this.state.paused}
-                    timeRegistered={this.timeRegistered}
-                    nextSongGetter={this.getNextSong}
-                    totalTime={totalTime}
-                />
-            );
+            audioBar = <CustomAudioBar />;
             contentSection = (
                 <SongArea
-                    songs={this.state.currentPlaylist.songs}
+                    songs={this.props.currentPlaylist.songs}
                     currentSongIndex={currentSongIndex}
-                    title={this.state.currentPlaylist.title}
+                    title={this.props.currentPlaylist.title}
                 />
             );
         } else if (
@@ -280,15 +129,7 @@ class MainPage extends Component {
         ) {
             contentSection = (
                 <div className="video-area">
-                    <VideoPlayer
-                        currentVideo={this.state.currentSong}
-                        currentTime={this.state.currentPlayTime}
-                        paused={this.setPaused}
-                        playOnLoad={!this.state.paused}
-                        timeRegistered={this.timeRegistered}
-                        nextSongGetter={this.getNextSong}
-                        totalTime={totalTime}
-                    />
+                    <VideoPlayer />
                     <SongArea
                         songs={this.props.currentPlaylist.songs}
                         currentSongIndex={currentSongIndex}
@@ -316,8 +157,8 @@ class MainPage extends Component {
             this.props.currentPlaylist &&
             _.findIndex(this.props.currentPlaylist.songs, song => {
                 return (
-                    this.state.currentSong &&
-                    this.state.currentSong === song.streamUrl
+                    this.props.currentSong &&
+                    this.props.currentSong === song.streamUrl
                 );
             });
 
@@ -382,6 +223,7 @@ const mapDispatchToProps = dispatch => {
     return {
         fetchPlaylists: () => dispatch(doFetchPlaylists()),
         fetchPlaylistByTitle: title => dispatch(doFetchPlaylistByTitle(title)),
+        goLive: () => dispatch(doGoLiveOnCurrentPlaylist()),
         socketConnect: () => dispatch(doSocketConnect()),
         socketDisconnect: () => dispatch(doSocketDisconnect()),
         socketChange: (newPlaylist, oldPlaylist) =>

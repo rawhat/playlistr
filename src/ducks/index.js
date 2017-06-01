@@ -5,6 +5,7 @@ import authenticationReducer from './authentication';
 import playlistReducer from './playlist';
 import pushSocketReducer from './push-socket';
 import protectedPlaylistReducer from './protected-playlist';
+import addSongReducer from './add-song';
 
 import { combineEpics } from 'redux-observable';
 
@@ -14,13 +15,17 @@ import {
     fetchPlaylistsEpic,
     goLiveOnPlaylistEpic,
     createPlaylistEpic,
+    pausePlaylistEpic,
 } from './playlist';
+
 import {
     userLoginEpic,
     userSignOutEpic,
     userSignupEpic,
     userCheckAuthEpic,
 } from './authentication';
+
+import { addSongEpic } from './add-song';
 
 export const rootEpic = combineEpics(
     userLoginEpic,
@@ -31,7 +36,9 @@ export const rootEpic = combineEpics(
     fetchPasswordPlaylistEpic,
     fetchPlaylistEpic,
     goLiveOnPlaylistEpic,
-    createPlaylistEpic
+    createPlaylistEpic,
+    addSongEpic,
+    pausePlaylistEpic
 );
 
 export default combineReducers({
@@ -40,4 +47,5 @@ export default combineReducers({
     playlist: playlistReducer,
     protectedPlaylist: protectedPlaylistReducer,
     socketStatus: pushSocketReducer,
+    addSong: addSongReducer,
 });

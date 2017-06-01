@@ -1,11 +1,12 @@
 import React from 'react';
 import { render } from 'react-dom';
 import App from './app';
+/* eslint-disable no-unused-vars */
 import rxjs from 'rxjs';
+/* eslint-enable */
 
 import { createStore, applyMiddleware, compose } from 'redux';
 import { Provider } from 'react-redux';
-// import { middleware as reduxPackMiddleware } from 'redux-pack';
 
 import { routerMiddleware } from 'react-router-redux';
 
@@ -25,13 +26,7 @@ const epicMiddleware = createEpicMiddleware(rootEpic);
 const store = createStore(
     rootReducer,
     composeEnhancers(
-        applyMiddleware(
-            epicMiddleware,
-            middleware,
-            socketMiddleware
-
-            // reduxPackMiddleware
-        )
+        applyMiddleware(epicMiddleware, middleware, socketMiddleware)
     )
 );
 

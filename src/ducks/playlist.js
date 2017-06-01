@@ -1,12 +1,8 @@
 import { ajax } from 'rxjs/observable/dom/ajax';
 import { of as of$ } from 'rxjs/observable/of';
-import axios from 'axios';
-import { handle } from 'redux-pack';
 
-import {
-    doHidePasswordModal,
-    doSetPasswordError,
-} from '../ducks/protected-playlist';
+import { doHidePasswordModal } from '../ducks/protected-playlist';
+
 import { doSocketChangePlaylist } from '../ducks/push-socket';
 
 const FETCH_PLAYLISTS = 'playlistr/playlist/FETCH_PLAYLISTS';
@@ -20,6 +16,7 @@ const HIDE_CREATE_PLAYLIST_MODAL =
 const CREATE_PLAYLIST = 'playlistr/playlist/CREATE_PLAYLIST';
 export const GO_LIVE_ON_PLAYLIST = 'playlistr/playlist/GO_LIVE_ON_PLAYLIST';
 const ADD_NEW_PLAYLIST = 'playlistr/playlist/ADD_NEW_PLAYLIST';
+
 const ADD_NEW_SONG_TO_CURRENT_PLAYLIST =
     'playlistr/playlist/ADD_NEW_SONG_TO_CURRENT_PLAYLIST';
 const SET_CURRENT_PLAYLIST = 'playlistr/playlist/SET_CURRENT_PLAYLIST';
@@ -29,6 +26,9 @@ const UPDATE_LIVE_PLAYLIST = 'playlistr/playlist/UPDATE_LIVE_PLAYLIST';
 const SET_PLAYLIST_CREATE_ERROR =
     'playlistr/playlist/SET_PLAYLIST_CREATE_ERROR';
 const CLEAR_PLAYLIST_CREATOR = 'playlistr/playlist/CLEAR_PLAYLIST_CREATOR';
+const TOGGLE_PAUSE_STATUS = 'playlistr/playlist/TOGGLE_PAUSE_STATUS';
+const TOGGLE_PAUSE = 'playlistr/playlist/TOGGLE_PAUSE';
+const UPDATE_PLAY_TIME = 'playlistr/playlist/UPDATE_PLAY_TIME';
 
 const initialState = {
     playlists: [],
@@ -36,7 +36,8 @@ const initialState = {
     creatingPlaylist: null,
     createPlaylistError: null,
     playlistFetchError: null,
-    currentPlayTime: null,
+    currentPlaytime: -1,
+    totalTime: 0,
     paused: true,
     currentSong: '',
 };
@@ -78,6 +79,13 @@ export default function playlistReducer(state = initialState, action) {
                 currentSong,
                 currentPlaytime,
                 paused,
+            };
+        }
+
+        case UPDATE_PLAY_TIME: {
+            return {
+                ...state,
+                currentPlaytime: payload,
             };
         }
 
@@ -137,6 +145,14 @@ export default function playlistReducer(state = initialState, action) {
             return {
                 ...state,
                 currentPlaylist: payload,
+                totalTime: payload.length,
+            };
+        }
+
+        case TOGGLE_PAUSE_STATUS: {
+            return {
+                ...state,
+                paused: !state.paused,
             };
         }
 
@@ -193,6 +209,26 @@ export function doShowCreatePlaylistModal() {
 export function doHideCreatePlaylistModal() {
     return {
         type: HIDE_CREATE_PLAYLIST_MODAL,
+    };
+}
+
+export function doTogglePause(title) {
+    return {
+        type: TOGGLE_PAUSE,
+        payload: title,
+    };
+}
+
+export function doTogglePauseStatus() {
+    return {
+        type: TOGGLE_PAUSE_STATUS,
+    };
+}
+
+export function doUpdatePlaytime(time) {
+    return {
+        type: UPDATE_PLAY_TIME,
+        payload: time,
     };
 }
 
@@ -323,7 +359,7 @@ export const goLiveOnPlaylistEpic = (action$, store) =>
             responseType: 'json',
         })
             .map(response => response.response)
-            .map(doUpdateLivePlaylist)
+            .map(({ songUrl, time }) => doUpdateLivePlaylist(songUrl, time))
             .catch(err => of$(err).map(doSetPlaylistError))
     );
 
@@ -341,4 +377,17 @@ export const createPlaylistEpic = action$ =>
                 doFetchPasswordPlaylistByTitle(res.title, res.password),
             ])
             .catch(err => of$(err).map(doSetPlaylistCreateError))
+    );
+
+export const pausePlaylistEpic = action$ =>
+    action$.ofType(TOGGLE_PAUSE).switchMap(({ payload }) =>
+        ajax({
+            url: '/playlist',
+            method: 'POST',
+            responseType: 'json',
+            body: { title: payload },
+        })
+            .map(response => response.response)
+            .map(() => doTogglePauseStatus())
+            .catch(err => of$(err).map(doSetPlaylistError))
     );

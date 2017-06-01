@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
+import PropTypes from 'prop-types';
 import { Button, Modal } from 'react-bootstrap';
 
 const ModalHeader = Modal.Header;
@@ -28,6 +29,10 @@ class PlaylistCreator extends Component {
             nameTaken: false,
         };
     }
+
+    static propTypes = {
+        playlistSelector: PropTypes.func,
+    };
 
     createPlaylist = async ev => {
         ev.preventDefault();
@@ -97,9 +102,6 @@ class PlaylistCreator extends Component {
         );
     };
 }
-PlaylistCreator.propTypes = {
-    playlistSelector: React.PropTypes.func,
-};
 
 const mapStateToProps = state => {
     return {

@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 import _ from 'lodash';
 
 import Playlist from './playlist';
@@ -6,6 +7,14 @@ import PasswordPlaylist from './password-playlist';
 import PlaylistCreator from './playlist-creator';
 
 class PlaylistSidebar extends Component {
+    static propTypes = {
+        playlists: PropTypes.array,
+        selectedPlaylistIndex: PropTypes.number,
+        playlistSelector: PropTypes.func,
+        selectProtectedPlaylist: PropTypes.func,
+        passwordOverlay: PropTypes.element,
+    };
+
     playlistSelector = name => {
         this.props.playlistSelector(name);
     };
@@ -60,12 +69,5 @@ class PlaylistSidebar extends Component {
         );
     };
 }
-PlaylistSidebar.propTypes = {
-    playlists: React.PropTypes.array,
-    selectedPlaylistIndex: React.PropTypes.number,
-    playlistSelector: React.PropTypes.func,
-    selectProtectedPlaylist: React.PropTypes.func,
-    passwordOverlay: React.PropTypes.element,
-};
 
 export default PlaylistSidebar;

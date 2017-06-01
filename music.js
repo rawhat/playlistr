@@ -1,3 +1,5 @@
+/* eslint-disable no-console */
+
 var Promise = require('bluebird');
 var _ = require('lodash');
 var ytdl = Promise.promisifyAll(require('youtube-dl'));
@@ -30,7 +32,7 @@ class Playlist {
         this.type = type;
         this.length = 0;
         this.isPaused = true;
-        this.startDate = null; // last time it was played
+        this.startDate = 0; // last time it was played
         this.currentTime = 0; // time elapsed at last play
         this.currentSongIndex = 0;
         this.songs = [];
@@ -55,13 +57,14 @@ class Playlist {
                 });
                 let { error } = await this.conn.makeQuery(
                     `MATCH (p:Playlist) WHERE p.title = {title}
-				CREATE UNIQUE (p)-[:HAS { addedAt: {addedAt} }]->(:Song {
+				CREATE UNIQUE (p)-[:HAS { addedAt: {addedAt} }]->(s:Song {
 					info: {info},
 					isVideo: {isVideo},
 					url: {url},
 					length: {length},
 					streamUrl: {streamUrl}
-				}) RETURN p as playlist`,
+				})
+                RETURN p as playlist, s AS song`,
                     params
                 );
 
@@ -123,6 +126,7 @@ class Playlist {
 
     async getCurrentSongAndTime() {
         if (this.hasPlayed) {
+            console.log('has played');
             return {
                 song: null,
                 time: -1,
@@ -225,7 +229,7 @@ class PlaylistManager {
             let { data, error } = await this.conn.makeQuery(
                 `
 				MATCH (u:User) WHERE u.username = {creator}
-				CREATE (u)-[:CREATED { createdAt: {createdAt} }]->(p:Playlist { 
+				CREATE (u)-[:CREATED { createdAt: {createdAt} }]->(p:Playlist {
 					title: {title},
 					category: {category},
 					password: {password},
@@ -308,7 +312,7 @@ class PlaylistManager {
         } else {
             this.playlists[title].currentTime =
                 this.playlists[title].currentTime +
-                (Date.now() - this.playlists[title].startDate);
+                (Date.now() - this.playlists[title].startDate) / 1000;
             this.playlists[title].isPaused = true;
         }
     }

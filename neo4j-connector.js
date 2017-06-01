@@ -16,11 +16,13 @@ class Neo4jConnector {
         try {
             let results = await session.run(query, params);
             let data = results.records[0].get('playlist').properties;
+            console.log(data);
 
             if (notifyNew) {
                 this.notifyNewPlaylistListeners(data);
             } else {
-                this.notifyPlaylistListeners(data);
+                let song = results.records[0].get('song').properties;
+                this.notifyPlaylistListeners(data.title, song);
             }
 
             return { data, error: null };
@@ -67,9 +69,8 @@ class Neo4jConnector {
             );
     }
 
-    notifyPlaylistListeners(data) {
-        let playlistTitle = data.title;
-        this.playlistListeners[playlistTitle].forEach(obj =>
+    notifyPlaylistListeners(title, data) {
+        this.playlistListeners[title].forEach(obj =>
             obj.listenerFunction(data)
         );
     }

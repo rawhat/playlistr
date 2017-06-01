@@ -1,12 +1,15 @@
 import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 import _ from 'lodash';
 
 import PlaylistSong from './playlist-song';
 
 class SongArea extends Component {
-    constructor() {
-        super();
-    }
+    static propTypes = {
+        title: PropTypes.string,
+        songs: PropTypes.array,
+        currentSongIndex: PropTypes.number,
+    };
 
     static defaultProps = {
         title: undefined,
@@ -51,10 +54,5 @@ class SongArea extends Component {
         );
     };
 }
-SongArea.propTypes = {
-    title: React.PropTypes.string,
-    songs: React.PropTypes.array,
-    currentSongIndex: React.PropTypes.number,
-};
 
 export default SongArea;

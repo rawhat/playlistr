@@ -1,34 +1,30 @@
 import React, { Component } from 'react';
 import { FormGroup, InputGroup } from 'react-bootstrap';
+import { connect } from 'react-redux';
+import { doAddSong, doSetText } from '../ducks/add-song';
+import PropTypes from 'prop-types';
 
 class AddSongArea extends Component {
-    constructor(props) {
-        super(props);
-    }
-
-    state = {
-        url: '',
+    static propTypes = {
+        set: PropTypes.func,
+        add: PropTypes.func,
+        error: PropTypes.bool,
+        text: PropTypes.string,
     };
 
     onChange = () => {
-        this.setState({
-            url: this.songUrl.value,
-        });
+        this.props.set(this.songUrl.value);
     };
 
     addSong = () => {
-        this.props.addSongCallback(this.state.url);
-        this.songUrl.value = '';
-        this.setState({
-            url: '',
-        });
+        this.props.add();
     };
 
     render = () => {
         return (
             // <div className='input-field' style={{width: '50%', margin: '10px auto'}}>
             (
-                <FormGroup>
+                <FormGroup className={this.props.error ? 'has-error' : ''}>
                     <InputGroup>
                         <input
                             className="form-control"
@@ -36,6 +32,7 @@ class AddSongArea extends Component {
                             type="text"
                             placeholder="Add song to current playlist"
                             onChange={this.onChange}
+                            value={this.props.text}
                         />
                         <InputGroup.Button>
                             <button
@@ -53,8 +50,19 @@ class AddSongArea extends Component {
         );
     };
 }
-AddSongArea.propTypes = {
-    addSongCallback: React.PropTypes.func,
+
+const mapStateToProps = state => {
+    return {
+        text: state.addSong.text,
+        error: state.addSong.error,
+    };
 };
 
-export default AddSongArea;
+const mapDispatchToProps = dispatch => {
+    return {
+        add: () => dispatch(doAddSong()),
+        set: text => dispatch(doSetText(text)),
+    };
+};
+
+export default connect(mapStateToProps, mapDispatchToProps)(AddSongArea);

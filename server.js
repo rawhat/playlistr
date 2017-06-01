@@ -58,48 +58,45 @@ async function buildPlaylistManager() {
     }
 }
 
-// // TODO:  still needs to be updated for neo4j
-// async function updateStreamUrls() {
-//     let session = driver.session();
+/* eslint-disable no-unused-vars */
+async function updateStreamUrls() {
+    let session = driver.session();
 
-// 	r.connect({host: 'localhost', port: 28015}, (err, conn) => {
-// 		var songObj = {};
-// 		r.db('Playlistr').table('songs').run(conn, (err, res) => {
-// 			res.toArray((err, arr) => {
-// 				var processList = [];
-// 				_.each(arr, song => {
-// 					processList.push((cb) => {
-// 						if(song.isVideo){
-// 							processVideoUrl(song.url, response => {
-// 								songObj[song.url] = response.streamUrl;
-// 								cb(null, songObj);
-// 							});
+    let results = await session.run('MATCH (s:Song) RETURN s AS song');
+    session.close();
 
-// 						}
-// 						else{
-// 							processUrl(song.url, response => {
-// 								songObj[song.url] = response.streamUrl;
-// 								cb(null, songObj);
-// 							});
-// 						}
-// 					});
-// 				});
-// 				async.parallel(processList, (err, _) => {
-// 					r.db('Playlistr').table('songs').getAll(..._.keys(songObj), {index: 'url'}).update(song => {
-// 						return {
-// 							streamUrl: r.expr(songObj).getField(song('url'))
-// 						};
-// 					}).run(conn, (err, res) => {
-// 						if(err) throw err;
-// 						console.log(res);
-// 						callback(true);
-// 					});
-// 				});
-// 			});
-// 		});
-// 	});
-// }
+    await Promise.all(
+        results.records.map(async record => {
+            let song = record.get('song').properties;
+            let updatedObj;
 
+            try {
+                if (song.type === 'music') {
+                    updatedObj = await processUrl(song.url);
+                } else {
+                    updatedObj = await processVideoUrl(song.url);
+                }
+
+                let session = driver.session();
+                return session.run(
+                    `
+                MATCH (s:Song) WHERE s.url = {url}
+                SET s.title = {title},
+                    s.streamUrl = {streamUrl},
+                    s.length = {length}
+                RETURN s;
+            `,
+                    updatedObj
+                );
+            } catch (err) {
+                console.error(err);
+            }
+        })
+    );
+
+    return true;
+}
+/* eslint-disable */
 var app = express();
 
 var session = require('express-session');
@@ -197,7 +194,7 @@ app.get('/authenticated', auth, (req, res) => {
     res.end();
 });
 
-app.post('/sign-up', async (req, res) => {
+app.post('/signup', async (req, res) => {
     let { username, password, password_repeat, email } = req.body;
     if (password !== password_repeat) {
         res.sendStatus(409);
@@ -428,6 +425,29 @@ app.put('/playlist', auth, async (req, res) => {
     }
 });
 
+// toggle playlist
+app.post('/playlist', async (req, res) => {
+    const { username } = req.user;
+    const { title } = req.body;
+    const playlist = manager.getPlaylist(title);
+    const status = playlist.isPaused;
+
+    if (title && playlist && username === playlist.creator) {
+        manager.togglePausePlaylist(title);
+
+        if (playlist.isPaused !== status) {
+            // successfully paused
+            res.sendStatus(200).end();
+        } else {
+            // error attempting to pause
+            res.sendStatus(500).end();
+        }
+    } else {
+        // invalid request (title not provided, or no playlist of title)
+        res.sendStatus(400).end();
+    }
+});
+
 const server = require('http').Server(app);
 const io = require('socket.io')(server);
 
@@ -463,13 +483,8 @@ app.get('*', (req, res) => {
     res.render('index');
 });
 
-// updateStreamUrls((status) => {
-// 	if(status)
-// 		app.listen(8880);
-// 	else
-// 		console.log('error :(');
-// });
 (async () => {
+    // await updateStreamUrls();
     await buildPlaylistManager();
     server.listen(8880);
 })();

@@ -1,5 +1,13 @@
 import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 import { Col } from 'react-bootstrap';
+import { connect } from 'react-redux';
+
+import {
+    doTogglePause,
+    doTogglePauseStatus,
+    doUpdatePlaytime,
+} from '../ducks/playlist';
 
 class CustomAudioBar extends Component {
     constructor(props) {
@@ -9,14 +17,29 @@ class CustomAudioBar extends Component {
         };
     }
 
+    static propTypes = {
+        currentSong: PropTypes.string,
+        totalTime: PropTypes.number,
+        currentTime: PropTypes.number,
+        timeRegistered: PropTypes.func,
+        playOnLoad: PropTypes.bool,
+        nextSongGetter: PropTypes.func,
+        paused: PropTypes.func,
+        togglePause: PropTypes.func,
+        title: PropTypes.string,
+        updatePlaytime: PropTypes.func,
+    };
+
     static defaultProps = {
         currentSong: '',
         totalTime: 0,
     };
 
     pauseHandler = () => {
-        this.props.paused(true);
-        this.audioPlayer.pause();
+        // this.props.paused(true);
+        // this.audioPlayer.pause();
+        // this.props.togglePause();
+        if (!this.props.paused) this.props.togglePause(this.props.title);
     };
 
     endedHandler = () => {
@@ -24,45 +47,63 @@ class CustomAudioBar extends Component {
     };
 
     timeHandler = () => {
-        console.log(this.audioPlayer.currentTime);
-        this.setState({
-            currTime: this.audioPlayer.currentTime,
-        });
+        if (this.audioPlayer)
+            this.props.updatePlaytime(this.audioPlayer.currentTime);
     };
 
     componentDidMount = () => {
         this.audioPlayer.volume = 0.25;
         this.audioPlayer.addEventListener('timeupdate', this.timeHandler);
-        this.audioPlayer.addEventListener('pause', this.pauseHandler);
+        // this.audioPlayer.addEventListener('pause', this.pauseHandler);
         this.audioPlayer.addEventListener('ended', this.endedHandler);
     };
 
     componentWillUnmount = () => {
         this.audioPlayer.removeEventListener('timeupdate', this.timeHandler);
-        this.audioPlayer.removeEventListener('pause', this.pauseHandler);
+        // this.audioPlayer.removeEventListener('pause', this.pauseHandler);
         this.audioPlayer.removeEventListener('ended', this.endedHandler);
     };
 
-    componentDidUpdate = () => {
-        var playStatus = this.props.playOnLoad && this.audioPlayer.paused
-            ? true
-            : false;
-        if (playStatus) {
-            this.audioPlayer.play();
+    componentWillReceiveProps = nextProps => {
+        console.log('receiving', nextProps);
+        // var playStatus = this.props.paused && this.audioPlayer.paused
+        //     ? true
+        //     : false;
+        // if (playStatus) {
+        //     this.audioPlayer.play();
+        // }
+        // if (this.props.currentTime !== null) {
+        //     this.audioPlayer.currentTime = this.props.currentTime;
+
+        //     // this.props.timeRegistered();
+        // }
+
+        if (nextProps.paused !== this.props.paused) {
+            if (nextProps.paused) {
+                console.log('pausing');
+                this.audioPlayer.pause();
+            } else {
+                console.log('playing');
+                this.audioPlayer.play();
+            }
         }
-        if (this.props.currentTime !== null) {
-            this.audioPlayer.currentTime = this.props.currentTime;
-            this.props.timeRegistered();
+
+        if (nextProps.currentTime) {
+            console.log('updating time');
+            this.audioPlayer.currentTime = nextProps.currentTime;
         }
     };
 
     togglePlay = () => {
-        var audioPlayer = this.audioPlayer;
-        if (audioPlayer.paused) audioPlayer.play();
-        else {
-            this.innerDiv.style.transition = 'paused';
-            audioPlayer.pause();
-        }
+        // var audioPlayer = this.audioPlayer;
+        // if (audioPlayer.paused) audioPlayer.play();
+        // else {
+        //     this.innerDiv.style.transition = 'paused';
+        //     audioPlayer.pause();
+        // }
+        if (this.props.username === this.props.creator)
+            this.props.togglePause(this.props.title);
+        else this.props.togglePauseStatus(this.props.title);
     };
 
     adjustVolume = () => {
@@ -164,14 +205,25 @@ class CustomAudioBar extends Component {
         );
     };
 }
-CustomAudioBar.propTypes = {
-    currentSong: React.PropTypes.string,
-    totalTime: React.PropTypes.number,
-    currentTime: React.PropTypes.number,
-    timeRegistered: React.PropTypes.func,
-    playOnLoad: React.PropTypes.bool,
-    nextSongGetter: React.PropTypes.func,
-    paused: React.PropTypes.func,
+
+const mapStateToProps = state => {
+    return {
+        title: state.playlist.currentPlaylist.title,
+        currentTime: state.playlist.currentPlaytime,
+        currentSong: state.playlist.currentSong,
+        paused: state.playlist.isPaused,
+        username: state.auth.user.username,
+        creator: state.playlist.currentPlaylist.creator,
+        totalTime: state.playlist.totalTime,
+    };
 };
 
-export default CustomAudioBar;
+const mapDispatchToProps = dispatch => {
+    return {
+        togglePause: title => dispatch(doTogglePause(title)),
+        togglePauseStatus: title => dispatch(doTogglePauseStatus(title)),
+        updatePlaytime: time => dispatch(doUpdatePlaytime(time)),
+    };
+};
+
+export default connect(mapStateToProps, mapDispatchToProps)(CustomAudioBar);

@@ -1,14 +1,16 @@
 import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 import { ButtonGroup, Button, Row, Col } from 'react-bootstrap';
 import ProgressBar from './progress-bar';
+import { connect } from 'react-redux';
+
+import { doTogglePause, doTogglePauseStatus } from '../ducks/playlist';
 
 class VideoPlayer extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            currTime: 0,
-            isPaused: true,
-            isFullscreen: false,
+            currentTime: 0,
         };
 
         this.fullscreenStyle = {
@@ -22,8 +24,19 @@ class VideoPlayer extends Component {
         };
     }
 
+    static propTypes = {
+        currentSong: PropTypes.string,
+        totalTime: PropTypes.number,
+        currentTime: PropTypes.number,
+        playOnLoad: PropTypes.bool,
+        nextSongGetter: PropTypes.func,
+        paused: PropTypes.bool,
+        togglePause: PropTypes.func,
+        title: PropTypes.string,
+        updatePlaytime: PropTypes.func,
+    };
+
     static defaultProps = {
-        currentVideo: '',
         totalTime: 0,
     };
 
@@ -47,23 +60,44 @@ class VideoPlayer extends Component {
         });
     };
 
-    componentDidUpdate = () => {
-        if (this.props.currentVideo) {
-            var playStatus = this.props.playOnLoad && this.videoPlayer.paused
-                ? true
-                : false;
-            if (this.props.currentTime) {
-                this.videoPlayer.currentTime = this.props.currentTime;
-                this.props.timeRegistered();
-            }
-            if (playStatus) {
+    componentWillReceiveProps(nextProps) {
+        console.log('receiving', nextProps);
+        if (
+            nextProps.currentTime !== this.props.currentTime &&
+            this.videoPlayer.src
+        ) {
+            this.videoPlayer.currentTime = nextProps.currentTime;
+        }
+
+        if (nextProps.currentSong !== this.videoPlayer.src) {
+            this.videoPlayer.src = nextProps.currentSong;
+        }
+    }
+
+    componentDidUpdate() {
+        // if (this.props.currentVideo) {
+        //     var playStatus = this.props.playOnLoad && this.videoPlayer.paused
+        //         ? true
+        //         : false;
+        //     if (this.props.currentTime) {
+        //         this.videoPlayer.currentTime = this.props.currentTime;
+        //         this.props.timeRegistered();
+        //     }
+        //     if (playStatus) {
+        //         this.videoPlayer.play();
+        //     }
+        // } else {
+        //     this.videoPlayer.src = '';
+        //     this.videoPlayer.pause();
+        // }
+        if (this.videoPlayer.src) {
+            if (this.props.paused) {
+                this.videoPlayer.pause();
+            } else {
                 this.videoPlayer.play();
             }
-        } else {
-            this.videoPlayer.src = '';
-            this.videoPlayer.pause();
         }
-    };
+    }
 
     componentWillUnmount = () => {
         this.videoPlayer.removeEventListener('timeupdate', this.timeHandler);
@@ -100,9 +134,8 @@ class VideoPlayer extends Component {
 
     timeHandler = () => {
         if (this.videoPlayer) {
-            var currTime = this.videoPlayer.currentTime;
             this.setState({
-                currTime: currTime,
+                currentTime: this.videoPlayer.currentTime,
             });
         }
     };
@@ -112,17 +145,13 @@ class VideoPlayer extends Component {
     };
 
     togglePause = () => {
-        var paused = this.videoPlayer.paused;
-        if (paused) {
-            this.videoPlayer.play();
-        } else {
-            this.videoPlayer.pause();
-        }
+        if (this.props.username === this.props.creator)
+            this.props.togglePause(this.props.title);
+        else this.props.togglePauseStatus(this.props.title);
     };
 
     pauseHandler = () => {
-        this.props.paused(true);
-        this.videoPlayer.pause();
+        if (!this.props.paused) this.props.togglePause(this.props.title);
     };
 
     adjustVolume = () => {
@@ -143,23 +172,9 @@ class VideoPlayer extends Component {
             />
         );
 
-        var glyphicon = 'play';
-        // var currentTime = 0;
-
-        var paused = true;
-        if (this.videoPlayer !== undefined) {
+        let glyphicon = 'play';
+        if (this.videoPlayer)
             glyphicon = this.videoPlayer.paused ? 'play' : 'pause';
-            // currentTime = this.videoPlayer.currentTime;
-            paused = this.videoPlayer.paused;
-        }
-
-        var progressBar = (
-            <ProgressBar
-                currentTime={this.state.currTime}
-                totalTime={this.props.totalTime}
-                isPaused={paused}
-            />
-        );
 
         return (
             <div>
@@ -168,8 +183,8 @@ class VideoPlayer extends Component {
                         controls={false}
                         onClick={this.togglePause}
                         ref={videoPlayer => this.videoPlayer = videoPlayer}
-                        src={this.props.currentVideo}
-                        hidden={this.props.currentVideo === '' ? 'hidden' : ''}
+                        src={this.props.currentSong}
+                        hidden={!this.props.currentSong ? 'hidden' : ''}
                         width={'85%'}
                     />
                 </Row>
@@ -201,7 +216,7 @@ class VideoPlayer extends Component {
                         </ButtonGroup>
                     </Col>
                     <Col md={7}>
-                        {progressBar}
+                        <ProgressBar currentTime={this.state.currentTime} />
                     </Col>
                     <Col md={2}>
                         {volumeControl}
@@ -211,14 +226,24 @@ class VideoPlayer extends Component {
         );
     };
 }
-VideoPlayer.propTypes = {
-    currentVideo: React.PropTypes.string,
-    totalTime: React.PropTypes.number,
-    currentTime: React.PropTypes.number,
-    timeRegistered: React.PropTypes.func,
-    playOnLoad: React.PropTypes.bool,
-    nextSongGetter: React.PropTypes.func,
-    paused: React.PropTypes.func,
+
+const mapStateToProps = state => {
+    return {
+        title: state.playlist.currentPlaylist.title,
+        currentTime: state.playlist.currentPlaytime,
+        currentSong: state.playlist.currentSong,
+        paused: state.playlist.paused,
+        username: state.auth.user.username,
+        creator: state.playlist.currentPlaylist.creator,
+        totalTime: state.playlist.totalTime,
+    };
 };
 
-export default VideoPlayer;
+const mapDispatchToProps = dispatch => {
+    return {
+        togglePause: title => dispatch(doTogglePause(title)),
+        togglePauseStatus: title => dispatch(doTogglePauseStatus(title)),
+    };
+};
+
+export default connect(mapStateToProps, mapDispatchToProps)(VideoPlayer);

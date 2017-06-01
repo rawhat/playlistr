@@ -1,9 +1,17 @@
 import React, { Component } from 'react';
+import PropTypes from 'prop-types';
+import { connect } from 'react-redux';
 
 class ProgressBar extends Component {
     constructor(props) {
         super(props);
     }
+
+    static propTypes = {
+        totalTime: PropTypes.number,
+        paused: PropTypes.bool,
+        currentTime: PropTypes.number,
+    };
 
     static defaultProps = {
         currentTime: 0,
@@ -41,12 +49,12 @@ class ProgressBar extends Component {
             ? totalMinutes + ':0' + totalSeconds
             : totalMinutes + ':' + totalSeconds;
 
-        if (this.innerDiv !== undefined && this.props.isPaused)
+        if (this.innerDiv !== undefined && this.props.paused)
             this.innerDiv.style.transition = 'paused';
 
         return (
             <div
-                ref={outerDiv => this.outerDiv = outerDiv}
+                ref={outerDiv => (this.outerDiv = outerDiv)}
                 style={{
                     backgroundColor: 'darkgray',
                     borderRadius: '3px',
@@ -56,7 +64,7 @@ class ProgressBar extends Component {
                 }}
             >
                 <div
-                    ref={innerDiv => this.innerDiv = innerDiv}
+                    ref={innerDiv => (this.innerDiv = innerDiv)}
                     style={{
                         backgroundColor: '#375a7f',
                         borderRadius: '3px',
@@ -73,10 +81,21 @@ class ProgressBar extends Component {
         );
     };
 }
-ProgressBar.propTypes = {
-    totalTime: React.PropTypes.number,
-    isPaused: React.PropTypes.bool,
-    currentTime: React.PropTypes.number,
+
+const mapStateToProps = state => {
+    let currentSongObject = state.playlist.currentPlaylist.songs.find(
+        song => song.streamUrl === state.playlist.currentSong
+    );
+
+    let totalTime = 0;
+    if (currentSongObject) {
+        totalTime = currentSongObject.length;
+    }
+
+    return {
+        totalTime,
+        paused: state.playlist.paused,
+    };
 };
 
-export default ProgressBar;
+export default connect(mapStateToProps)(ProgressBar);

@@ -1,12 +1,19 @@
 import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 
 class PlaylistSong extends Component {
-    constructor() {
-        super();
+    constructor(props) {
+        super(props);
         this.state = {
             hidden: true,
         };
     }
+
+    static propTypes = {
+        length: PropTypes.number,
+        info: PropTypes.string,
+        selected: PropTypes.bool,
+    };
 
     toggleHidden = () => {
         this.setState({
@@ -43,10 +50,5 @@ class PlaylistSong extends Component {
         );
     };
 }
-PlaylistSong.propTypes = {
-    length: React.PropTypes.number,
-    info: React.PropTypes.string,
-    selected: React.PropTypes.bool,
-};
 
 export default PlaylistSong;

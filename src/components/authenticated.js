@@ -11,7 +11,7 @@ const withAuthentication = authStatus => WrappedComponent => {
             error: PropTypes.bool,
             authCheck: PropTypes.func,
             authStatus: PropTypes.bool,
-            redirect: PropTypes.func,
+            redirect: PropTypes.func
         };
 
         componentWillMount() {
@@ -28,13 +28,13 @@ const withAuthentication = authStatus => WrappedComponent => {
     const mapStateToProps = state => {
         return {
             user: state.auth.user,
-            authStatus: state.auth.authStatus,
+            authStatus: state.auth.authStatus
         };
     };
 
     const mapDispatchToProps = dispatch => {
         return {
-            authCheck: () => dispatch(doAuthCheck()),
+            authCheck: () => dispatch(doAuthCheck())
         };
     };
 

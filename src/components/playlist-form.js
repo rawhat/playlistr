@@ -1,11 +1,22 @@
 import React, { Component } from 'react';
-
+import PropTypes from 'prop-types';
 import { Form, FormGroup, Col } from 'react-bootstrap';
 
 class PlaylistForm extends Component {
     constructor(props) {
         super(props);
     }
+
+    static propTypes = {
+        createPlaylist: PropTypes.func,
+        playlistType: PropTypes.string,
+        playlistOpenSubmissions: PropTypes.bool,
+        playlistPassword: PropTypes.string,
+        playlistCategory: PropTypes.string,
+        playlistName: PropTypes.string,
+        onUserInput: PropTypes.func,
+        hasError: PropTypes.bool,
+    };
 
     handleChange = () => {
         this.props.onUserInput(
@@ -138,15 +149,5 @@ class PlaylistForm extends Component {
         );
     };
 }
-PlaylistForm.propTypes = {
-    createPlaylist: React.PropTypes.func,
-    playlistType: React.PropTypes.string,
-    playlistOpenSubmissions: React.PropTypes.bool,
-    playlistPassword: React.PropTypes.string,
-    playlistCategory: React.PropTypes.string,
-    playlistName: React.PropTypes.string,
-    onUserInput: React.PropTypes.func,
-    hasError: React.PropTypes.bool,
-};
 
 export default PlaylistForm;

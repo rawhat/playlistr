@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 import {
     Overlay,
     Popover,
@@ -18,6 +19,16 @@ import {
 class PasswordPlaylist extends Component {
     state = {
         password: null,
+    };
+
+    static propTypes = {
+        name: PropTypes.string,
+        type: PropTypes.string,
+        selected: PropTypes.bool,
+        playlistSelector: PropTypes.func,
+        hasPassword: PropTypes.bool,
+        playlistPasswordError: PropTypes.bool,
+        selectProtectedPlaylist: PropTypes.func,
     };
 
     toggleOverlay = () => {
@@ -108,15 +119,6 @@ class PasswordPlaylist extends Component {
         );
     };
 }
-PasswordPlaylist.propTypes = {
-    name: React.PropTypes.string,
-    type: React.PropTypes.string,
-    selected: React.PropTypes.bool,
-    playlistSelector: React.PropTypes.func,
-    hasPassword: React.PropTypes.bool,
-    playlistPasswordError: React.PropTypes.bool,
-    selectProtectedPlaylist: React.PropTypes.func,
-};
 
 const mapStateToProps = state => {
     return {

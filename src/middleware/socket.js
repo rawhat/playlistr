@@ -38,7 +38,8 @@ function socketMiddleware() {
 
     const onNewSong = (ws, store) => msg => {
         const { song } = msg;
-        console.log('new song', msg);
+        console.log(msg);
+        store.dispatch(doAddNewSongToCurrentPlaylist(song));
     };
 
     return store => next => action => {
