@@ -5,7 +5,8 @@
         "jquery": true
     },
     "globals": {
-        "Promise": true
+        "Promise": true,
+        "Reflect": true
     },
     "parser": "babel-eslint",
     "parserOptions": {

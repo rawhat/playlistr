@@ -4,7 +4,7 @@ import { Col } from 'react-bootstrap';
 import { connect } from 'react-redux';
 
 import {
-    doTogglePause,
+    doGetNextSong,
     doTogglePauseStatus,
     doUpdatePlaytime,
 } from '../ducks/playlist';
@@ -36,14 +36,11 @@ class CustomAudioBar extends Component {
     };
 
     pauseHandler = () => {
-        // this.props.paused(true);
-        // this.audioPlayer.pause();
-        // this.props.togglePause();
         if (!this.props.paused) this.props.togglePause(this.props.title);
     };
 
     endedHandler = () => {
-        this.props.nextSongGetter();
+        this.props.nextSong();
     };
 
     timeHandler = () => {
@@ -65,45 +62,21 @@ class CustomAudioBar extends Component {
     };
 
     componentWillReceiveProps = nextProps => {
-        console.log('receiving', nextProps);
-        // var playStatus = this.props.paused && this.audioPlayer.paused
-        //     ? true
-        //     : false;
-        // if (playStatus) {
-        //     this.audioPlayer.play();
-        // }
-        // if (this.props.currentTime !== null) {
-        //     this.audioPlayer.currentTime = this.props.currentTime;
-
-        //     // this.props.timeRegistered();
-        // }
-
         if (nextProps.paused !== this.props.paused) {
             if (nextProps.paused) {
-                console.log('pausing');
                 this.audioPlayer.pause();
             } else {
-                console.log('playing');
                 this.audioPlayer.play();
             }
         }
 
         if (nextProps.currentTime) {
-            console.log('updating time');
             this.audioPlayer.currentTime = nextProps.currentTime;
         }
     };
 
     togglePlay = () => {
-        // var audioPlayer = this.audioPlayer;
-        // if (audioPlayer.paused) audioPlayer.play();
-        // else {
-        //     this.innerDiv.style.transition = 'paused';
-        //     audioPlayer.pause();
-        // }
-        if (this.props.username === this.props.creator)
-            this.props.togglePause(this.props.title);
-        else this.props.togglePauseStatus(this.props.title);
+        this.props.togglePause(this.props.title);
     };
 
     adjustVolume = () => {
@@ -220,8 +193,8 @@ const mapStateToProps = state => {
 
 const mapDispatchToProps = dispatch => {
     return {
-        togglePause: title => dispatch(doTogglePause(title)),
-        togglePauseStatus: title => dispatch(doTogglePauseStatus(title)),
+        togglePause: title => dispatch(doTogglePauseStatus(title)),
+        nextSong: () => dispatch(doGetNextSong()),
         updatePlaytime: time => dispatch(doUpdatePlaytime(time)),
     };
 };

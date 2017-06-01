@@ -16,6 +16,7 @@ import {
     goLiveOnPlaylistEpic,
     createPlaylistEpic,
     pausePlaylistEpic,
+    getNextSongEpic,
 } from './playlist';
 
 import {
@@ -38,7 +39,8 @@ export const rootEpic = combineEpics(
     goLiveOnPlaylistEpic,
     createPlaylistEpic,
     addSongEpic,
-    pausePlaylistEpic
+    pausePlaylistEpic,
+    getNextSongEpic,
 );
 
 export default combineReducers({

@@ -1,32 +1,40 @@
 import React, { Component } from 'react';
+import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import _ from 'lodash';
 
 import Playlist from './playlist';
 import PasswordPlaylist from './password-playlist';
 import PlaylistCreator from './playlist-creator';
+import { doFetchPlaylistByTitle, doFetchPlaylists } from '../ducks/playlist';
 
 class PlaylistSidebar extends Component {
     static propTypes = {
+        fetchPlaylists: PropTypes.func,
+        fetchPlaylistByTitle: PropTypes.func,
         playlists: PropTypes.array,
-        selectedPlaylistIndex: PropTypes.number,
+        currentPlaylist: PropTypes.object,
         playlistSelector: PropTypes.func,
-        selectProtectedPlaylist: PropTypes.func,
-        passwordOverlay: PropTypes.element,
     };
 
+    componentDidMount() {
+        this.props.fetchPlaylists();
+    }
+
     playlistSelector = name => {
-        this.props.playlistSelector(name);
+        if (name !== this.props.currentPlaylist.title)
+            this.props.fetchPlaylistByTitle(name);
     };
 
     render = () => {
-        var playlists = null;
+        let playlists = null;
+
         if (this.props.playlists.length != 0) {
             playlists = (
                 <div className="playlist-list-group list-group">
                     {_.map(this.props.playlists, (playlist, index) => {
-                        var selected =
-                            index == this.props.selectedPlaylistIndex;
+                        let selected =
+                            playlist.title === this.props.currentPlaylist.title;
                         return playlist.hasPassword
                             ? <PasswordPlaylist
                                   name={playlist.title}
@@ -39,11 +47,6 @@ class PlaylistSidebar extends Component {
                                       null,
                                       playlist.title
                                   )}
-                                  selectProtectedPlaylist={
-                                      this.props.selectProtectedPlaylist
-                                  }
-                                  hasPassword={playlist.hasPassword}
-                                  passwordOverlay={this.props.passwordOverlay}
                                   name={playlist.title}
                                   key={index}
                                   selected={selected}
@@ -63,11 +66,25 @@ class PlaylistSidebar extends Component {
         }
         return (
             <div>
-                <PlaylistCreator playlistSelector={this.playlistSelector} />
+                <PlaylistCreator />
                 {playlists}
             </div>
         );
     };
 }
 
-export default PlaylistSidebar;
+const mapStateToProps = state => {
+    return {
+        playlists: state.playlist.playlists,
+        currentPlaylist: state.playlist.currentPlaylist,
+    };
+};
+
+const mapDispatchToProps = dispatch => {
+    return {
+        fetchPlaylists: () => dispatch(doFetchPlaylists()),
+        fetchPlaylistByTitle: title => dispatch(doFetchPlaylistByTitle(title)),
+    };
+};
+
+export default connect(mapStateToProps, mapDispatchToProps)(PlaylistSidebar);

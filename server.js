@@ -265,12 +265,15 @@ app.put('/song', auth, async (req, res) => {
 
         var isVideo = playlist.type === 'video' ? true : false;
 
+        let songIndex = playlist.songs.length;
+
         var song = new Song(
             response.title,
             isVideo,
             response.url,
             response.length,
-            response.streamUrl
+            response.streamUrl,
+            songIndex
         );
         song.driver = driver;
 
@@ -340,7 +343,7 @@ app.get('/playlist', auth, async (req, res) => {
         // console.log(manager);
         playlist.playbackTimer = null;
         let songs = await playlist.getSongs();
-        playlist.songs = songs;
+        playlist.songs = _.orderBy(songs, song => song.index, 'asc');
         playlist = _.omit(playlist, ['driver', 'conn']);
 
         if (playlist.password) {
@@ -426,27 +429,27 @@ app.put('/playlist', auth, async (req, res) => {
 });
 
 // toggle playlist
-app.post('/playlist', async (req, res) => {
-    const { username } = req.user;
-    const { title } = req.body;
-    const playlist = manager.getPlaylist(title);
-    const status = playlist.isPaused;
+// app.post('/playlist', async (req, res) => {
+//     const { username } = req.user;
+//     const { title } = req.body;
+//     const playlist = manager.getPlaylist(title);
+//     const status = playlist.isPaused;
 
-    if (title && playlist && username === playlist.creator) {
-        manager.togglePausePlaylist(title);
+//     if (title && playlist && username === playlist.creator) {
+//         manager.togglePausePlaylist(title);
 
-        if (playlist.isPaused !== status) {
-            // successfully paused
-            res.sendStatus(200).end();
-        } else {
-            // error attempting to pause
-            res.sendStatus(500).end();
-        }
-    } else {
-        // invalid request (title not provided, or no playlist of title)
-        res.sendStatus(400).end();
-    }
-});
+//         if (playlist.isPaused !== status) {
+//             // successfully paused
+//             res.sendStatus(200).end();
+//         } else {
+//             // error attempting to pause
+//             res.sendStatus(500).end();
+//         }
+//     } else {
+//         // invalid request (title not provided, or no playlist of title)
+//         res.sendStatus(400).end();
+//     }
+// });
 
 const server = require('http').Server(app);
 const io = require('socket.io')(server);
@@ -488,3 +491,8 @@ app.get('*', (req, res) => {
     await buildPlaylistManager();
     server.listen(8880);
 })();
+
+// used for testing
+module.exports = {
+    buildPlaylistManager,
+};

@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
+import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import _ from 'lodash';
 
 import PlaylistSong from './playlist-song';
 
@@ -8,23 +8,15 @@ class SongArea extends Component {
     static propTypes = {
         title: PropTypes.string,
         songs: PropTypes.array,
-        currentSongIndex: PropTypes.number,
-    };
-
-    static defaultProps = {
-        title: undefined,
-        songs: [],
-        currentSongIndex: -1,
+        currentSong: PropTypes.string,
     };
 
     render = () => {
         if (this.props.title === undefined) return <div />;
 
-        var songs = [];
-        _.each(this.props.songs, (song, index) => {
-            var selected = false;
-            if (index == this.props.currentSongIndex) selected = true;
-            songs.push(
+        let songs = this.props.songs.map((song, index) => {
+            let selected = song.streamUrl === this.props.currentSong;
+            return (
                 <PlaylistSong
                     key={index}
                     info={song.info}
@@ -33,6 +25,7 @@ class SongArea extends Component {
                 />
             );
         });
+
         if (songs.length === 0) {
             return (
                 <div>
@@ -55,4 +48,12 @@ class SongArea extends Component {
     };
 }
 
-export default SongArea;
+const mapStateToProps = state => {
+    return {
+        songs: state.playlist.currentPlaylist.songs,
+        title: state.playlist.currentPlaylist.title,
+        currentSong: state.playlist.currentSong,
+    };
+};
+
+export default connect(mapStateToProps)(SongArea);

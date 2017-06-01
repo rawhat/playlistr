@@ -1,3 +1,5 @@
+const omit = require('lodash').omit;
+
 class Neo4jConnector {
     constructor(driver) {
         this.driver = driver;
@@ -16,7 +18,8 @@ class Neo4jConnector {
         try {
             let results = await session.run(query, params);
             let data = results.records[0].get('playlist').properties;
-            console.log(data);
+            data.hasPassword = !!data.password;
+            data = omit(data, 'password');
 
             if (notifyNew) {
                 this.notifyNewPlaylistListeners(data);

@@ -5,13 +5,14 @@ var _ = require('lodash');
 var ytdl = Promise.promisifyAll(require('youtube-dl'));
 
 class Song {
-    constructor(info, isVideo, url, length, streamUrl) {
+    constructor(info, isVideo, url, length, streamUrl, songIndex) {
         this.info = info;
         this.isVideo = isVideo;
         this.url = url;
         this.length = length;
         this.streamUrl = streamUrl;
         this.driver = null;
+        this.index = songIndex;
     }
 }
 
@@ -55,6 +56,7 @@ class Playlist {
                     addedAt: Date.now(),
                     title: this.title,
                 });
+
                 let { error } = await this.conn.makeQuery(
                     `MATCH (p:Playlist) WHERE p.title = {title}
 				CREATE UNIQUE (p)-[:HAS { addedAt: {addedAt} }]->(s:Song {
@@ -62,7 +64,8 @@ class Playlist {
 					isVideo: {isVideo},
 					url: {url},
 					length: {length},
-					streamUrl: {streamUrl}
+					streamUrl: {streamUrl},
+                    index: {index}
 				})
                 RETURN p as playlist, s AS song`,
                     params
@@ -70,8 +73,12 @@ class Playlist {
 
                 if (error) throw Error(error);
                 else {
-                    this.songs = this.songs.concat(song);
-                    this.updateLength();
+                    this.songs = _.orderBy(
+                        this.songs.concat(song),
+                        song => song.index,
+                        'asc'
+                    );
+                    await this.updateLength();
                     return true;
                 }
             } catch (err) {
@@ -113,7 +120,7 @@ class Playlist {
                 let songs = results.records.map(
                     record => record.get('song').properties
                 );
-                return songs;
+                return _.orderBy(songs, song => song.index, 'asc');
             } catch (err) {
                 throw Error(err);
             } finally {
@@ -133,21 +140,15 @@ class Playlist {
             };
         } else {
             let songs = await this.getSongs();
-            var length = 0;
-            var index = 0;
+            let length = 0;
             for (let song of songs) {
-                length += song.length;
-                if (length >= this.getCurrentPlaytime()) {
-                    index = index === 0 ? 1 : index;
-                    let prevLength = songs
-                        .slice(0, index - 1)
-                        .reduce((sum, song) => sum + song.length, 0);
+                if (length + song.length > this.getCurrentPlaytime()) {
                     return {
-                        song: songs[index - 1],
-                        time: this.getCurrentPlaytime() - prevLength,
+                        song,
+                        time: this.getCurrentPlaytime() - length,
                     };
                 }
-                index++;
+                length += song.length;
             }
             return {
                 song: null,
@@ -266,7 +267,7 @@ class PlaylistManager {
         }
     }
 
-    addExistingPlaylist(playlist) {
+    async addExistingPlaylist(playlist) {
         const {
             title,
             category,
@@ -291,7 +292,7 @@ class PlaylistManager {
         }
         this.playlists[playlist.title].driver = this.driver;
         this.playlists[playlist.title].conn = this.conn;
-        this.playlists[playlist.title].updateLength();
+        await this.playlists[playlist.title].updateLength();
     }
 
     startPlaylist(title, song = null) {

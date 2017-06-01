@@ -31,7 +31,7 @@ class PlaylistCreator extends Component {
     }
 
     static propTypes = {
-        playlistSelector: PropTypes.func,
+        // playlistSelector: PropTypes.func,
     };
 
     createPlaylist = async ev => {

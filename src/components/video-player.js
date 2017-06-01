@@ -4,7 +4,7 @@ import { ButtonGroup, Button, Row, Col } from 'react-bootstrap';
 import ProgressBar from './progress-bar';
 import { connect } from 'react-redux';
 
-import { doTogglePause, doTogglePauseStatus } from '../ducks/playlist';
+import { doTogglePauseStatus, doGetNextSong } from '../ducks/playlist';
 
 class VideoPlayer extends Component {
     constructor(props) {
@@ -141,13 +141,12 @@ class VideoPlayer extends Component {
     };
 
     nextSongGetter = () => {
-        this.props.nextSongGetter();
+        this.videoPlayer.src = '';
+        this.props.nextSong();
     };
 
     togglePause = () => {
-        if (this.props.username === this.props.creator)
-            this.props.togglePause(this.props.title);
-        else this.props.togglePauseStatus(this.props.title);
+        this.props.togglePause(this.props.title);
     };
 
     pauseHandler = () => {
@@ -241,8 +240,8 @@ const mapStateToProps = state => {
 
 const mapDispatchToProps = dispatch => {
     return {
-        togglePause: title => dispatch(doTogglePause(title)),
-        togglePauseStatus: title => dispatch(doTogglePauseStatus(title)),
+        togglePause: title => dispatch(doTogglePauseStatus(title)),
+        nextSong: () => dispatch(doGetNextSong()),
     };
 };
 

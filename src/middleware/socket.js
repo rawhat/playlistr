@@ -31,14 +31,14 @@ function socketMiddleware() {
     };
 
     const onNewPlaylist = (ws, store) => msg => {
-        console.log(msg);
+        console.log('new playlist', msg);
         const { playlist } = msg;
         store.dispatch(doAddNewPlaylist(playlist));
     };
 
     const onNewSong = (ws, store) => msg => {
         const { song } = msg;
-        console.log(msg);
+        console.log('new song', msg);
         store.dispatch(doAddNewSongToCurrentPlaylist(song));
     };
 

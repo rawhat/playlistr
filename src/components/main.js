@@ -11,11 +11,7 @@ import VideoPlayer from './video-player';
 import PlaylistSidebar from './playlist-sidebar';
 import SongArea from './song-area';
 
-import {
-    doFetchPlaylists,
-    doFetchPlaylistByTitle,
-    doGoLiveOnCurrentPlaylist,
-} from '../ducks/playlist';
+import { doGoLiveOnCurrentPlaylist } from '../ducks/playlist';
 import {
     doSocketConnect,
     doSocketDisconnect,
@@ -24,24 +20,6 @@ import {
 import { doSignOut } from '../ducks/authentication';
 
 class MainPage extends Component {
-    constructor(props) {
-        super(props);
-
-        this.socket = null;
-
-        this.state = {
-            playlists: [],
-            selectedPlaylist: '',
-            currentPlaylist: {},
-            currentPlayTime: null,
-            paused: true,
-            currentSong: '',
-            playlistPasswordOverlay: false,
-            playlistPasswordAccess: null,
-            playlistPasswordError: false,
-        };
-    }
-
     static propTypes = {
         fetchPlaylists: PropTypes.func,
         fetchPlaylistByTitle: PropTypes.func,
@@ -49,36 +27,21 @@ class MainPage extends Component {
         socketDisconnect: PropTypes.func,
         playlists: PropTypes.array,
         currentPlaylist: PropTypes.object,
+        goLive: PropTypes.func,
+        currentSong: PropTypes.string,
     };
 
     componentDidMount = () => {
         this.props.socketConnect();
-        this.props.fetchPlaylists();
     };
 
     componentWillUnmount = () => {
         this.props.socketDisconnect();
     };
 
-    selectPlaylist = async name => {
-        let playlist = this.props.playlists.find(
-            playlist => playlist.title === name
-        );
-
-        if (!playlist.hasPassword) {
-            this.props.fetchPlaylistByTitle(name);
-        }
-    };
-
-    timeRegistered = () => {
-        this.setState({
-            currentPlayTime: null,
-        });
-    };
-
     render = () => {
-        var goLiveLink = null;
-        var exportPlaylistLink = null;
+        let goLiveLink = null;
+        let exportPlaylistLink = null;
         if (
             this.props.currentPlaylist &&
             this.props.currentPlaylist.hasOwnProperty('songs') &&
@@ -108,21 +71,15 @@ class MainPage extends Component {
             );
         }
 
-        var audioBar = null;
-        var contentSection = null;
+        let audioBar = null;
+        let contentSection = null;
 
         if (
             this.props.currentPlaylist &&
             this.props.currentPlaylist.type === 'music'
         ) {
             audioBar = <CustomAudioBar />;
-            contentSection = (
-                <SongArea
-                    songs={this.props.currentPlaylist.songs}
-                    currentSongIndex={currentSongIndex}
-                    title={this.props.currentPlaylist.title}
-                />
-            );
+            contentSection = <SongArea />;
         } else if (
             this.props.currentPlaylist &&
             this.props.currentPlaylist.type === 'video'
@@ -130,37 +87,16 @@ class MainPage extends Component {
             contentSection = (
                 <div className="video-area">
                     <VideoPlayer />
-                    <SongArea
-                        songs={this.props.currentPlaylist.songs}
-                        currentSongIndex={currentSongIndex}
-                        title={this.props.currentPlaylist.title}
-                    />
+                    <SongArea />
                 </div>
             );
         }
 
-        var addSongArea = _.isEqual({}, this.props.currentPlaylist) ||
+        let addSongArea = _.isEqual({}, this.props.currentPlaylist) ||
             !this.props.currentPlaylist ||
             this.props.currentPlaylist.title === undefined
             ? null
             : <AddSongArea addSongCallback={this.addSongCallback} />;
-        var selectedPlaylistIndex = _.findIndex(
-            this.props.playlists,
-            playlist => {
-                return (
-                    this.props.currentPlaylist &&
-                    this.props.currentPlaylist.title === playlist.title
-                );
-            }
-        );
-        var currentSongIndex =
-            this.props.currentPlaylist &&
-            _.findIndex(this.props.currentPlaylist.songs, song => {
-                return (
-                    this.props.currentSong &&
-                    this.props.currentSong === song.streamUrl
-                );
-            });
 
         return (
             <div style={{ marginTop: 60 }}>
@@ -170,14 +106,7 @@ class MainPage extends Component {
                             {addSongArea}
                         </Row>
                         <Row>
-                            <PlaylistSidebar
-                                playlistSelector={this.selectPlaylist}
-                                playlists={this.props.playlists}
-                                selectedPlaylistIndex={selectedPlaylistIndex}
-                                selectProtectedPlaylist={
-                                    this.selectProtectedPlaylist
-                                }
-                            />
+                            <PlaylistSidebar />
                         </Row>
                     </Col>
                     <Col md={10} sm={12}>
@@ -213,16 +142,12 @@ class MainPage extends Component {
 
 const mapStateToProps = state => {
     return {
-        // playlists: state.playlist.playlists,
-        // currentPlaylist: state.playlist.currentPlaylist,
-        ...state.playlist,
+        currentPlaylist: state.playlist.currentPlaylist,
     };
 };
 
 const mapDispatchToProps = dispatch => {
     return {
-        fetchPlaylists: () => dispatch(doFetchPlaylists()),
-        fetchPlaylistByTitle: title => dispatch(doFetchPlaylistByTitle(title)),
         goLive: () => dispatch(doGoLiveOnCurrentPlaylist()),
         socketConnect: () => dispatch(doSocketConnect()),
         socketDisconnect: () => dispatch(doSocketDisconnect()),

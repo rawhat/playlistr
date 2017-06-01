@@ -29,6 +29,7 @@ const CLEAR_PLAYLIST_CREATOR = 'playlistr/playlist/CLEAR_PLAYLIST_CREATOR';
 const TOGGLE_PAUSE_STATUS = 'playlistr/playlist/TOGGLE_PAUSE_STATUS';
 const TOGGLE_PAUSE = 'playlistr/playlist/TOGGLE_PAUSE';
 const UPDATE_PLAY_TIME = 'playlistr/playlist/UPDATE_PLAY_TIME';
+const GET_NEXT_SONG = 'playlistr/playlist/GET_NEXT_SONG';
 
 const initialState = {
     playlists: [],
@@ -298,6 +299,12 @@ function doClearPlaylistCreator() {
     };
 }
 
+export function doGetNextSong() {
+    return {
+        type: GET_NEXT_SONG,
+    };
+}
+
 export const fetchPlaylistsEpic = action$ =>
     action$.ofType(FETCH_PLAYLISTS).switchMap(() =>
         ajax({
@@ -374,7 +381,7 @@ export const createPlaylistEpic = action$ =>
             .map(response => response.response)
             .flatMap(res => [
                 doClearPlaylistCreator(),
-                doFetchPasswordPlaylistByTitle(res.title, res.password),
+                doFetchPasswordPlaylistByTitle(res.title, payload.password),
             ])
             .catch(err => of$(err).map(doSetPlaylistCreateError))
     );
@@ -389,5 +396,16 @@ export const pausePlaylistEpic = action$ =>
         })
             .map(response => response.response)
             .map(() => doTogglePauseStatus())
+            .catch(err => of$(err).map(doSetPlaylistError))
+    );
+
+export const getNextSongEpic = (action$, store) =>
+    action$.ofType(GET_NEXT_SONG).switchMap(() =>
+        ajax({
+            url: `/song/next?playlist=${store.getState().playlist.currentPlaylist.title}`,
+            responseType: 'json',
+        })
+            .map(response => response.response)
+            .map(({ songUrl, time }) => doUpdateLivePlaylist(songUrl, time))
             .catch(err => of$(err).map(doSetPlaylistError))
     );
