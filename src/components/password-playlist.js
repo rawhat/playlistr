@@ -14,11 +14,13 @@ import { doFetchPasswordPlaylistByTitle } from '../ducks/playlist';
 import {
     doToggleModal,
     doHidePasswordModal,
+    doToggleVisibility,
 } from '../ducks/protected-playlist';
 
 class PasswordPlaylist extends Component {
     state = {
         password: null,
+        textHidden: true,
     };
 
     static propTypes = {
@@ -37,6 +39,10 @@ class PasswordPlaylist extends Component {
 
     hideOverlay = () => {
         this.props.hide(this.props.name);
+    };
+
+    toggleVisbility = () => {
+        this.props.toggleVisbility();
     };
 
     submitPassword = ev => {
@@ -94,8 +100,22 @@ class PasswordPlaylist extends Component {
                             onSubmit={this.submitPassword}
                         >
                             <InputGroup>
+                                <InputGroup.Button>
+                                    <Button
+                                        bsStyle="warning"
+                                        onClick={this.toggleVisbility}
+                                    >
+                                        {this.props.textHidden
+                                            ? <span className="glyphicon glyphicon-eye-open" />
+                                            : <span className="glyphicon glyphicon-eye-close" />}
+                                    </Button>
+                                </InputGroup.Button>
                                 <FormControl
-                                    type="text"
+                                    type={
+                                        this.props.textHidden
+                                            ? 'password'
+                                            : 'text'
+                                    }
                                     id="password-overlay"
                                     onChange={ev =>
                                         this.setState({
@@ -125,6 +145,7 @@ const mapStateToProps = state => {
         error: state.protectedPlaylist.error,
         title: state.protectedPlaylist.playlistTitle,
         displayModal: state.protectedPlaylist.displayModal,
+        textHidden: state.protectedPlaylist.textHidden,
     };
 };
 
@@ -134,6 +155,7 @@ const mapDispatchToProps = dispatch => {
             dispatch(doFetchPasswordPlaylistByTitle(title, password)),
         toggleModal: title => dispatch(doToggleModal(title)),
         hide: title => dispatch(doHidePasswordModal(title)),
+        toggleVisbility: () => dispatch(doToggleVisibility()),
     };
 };
 
