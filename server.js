@@ -17,7 +17,7 @@ var processVideoUrl = Music.processVideoUrl;
 const db = {
     address: 'bolt://localhost',
     username: 'neo4j',
-    password: 'neo4j',
+    password: 'Password12',
 };
 var driver = new neo4j.driver(
     db.address,
