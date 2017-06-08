@@ -13,10 +13,44 @@ defmodule Playlistr.Web.Router do
     plug :accepts, ["json"]
   end
 
+  scope "/login", Playlistr.Web do
+    pipe_through :api
+
+    post "/", AuthController, :login
+  end
+
+  scope "/logout", Playlistr.Web do
+    pipe_through :api
+
+    get "/", AuthController, :logout
+  end
+
+  scope "/signup", Playlistr.Web do
+    pipe_through :api
+
+    post "/", AuthController, :signup
+  end
+
+  scope "/song", Playlistr.Web do
+    pipe_through :api
+
+    get "/", SongController, :index
+    put "/", SongController, :add_song
+    # post "/", SongController, :get_song
+    get "/next", SongController, :next_song
+  end
+
+  scope "/playlist", Playlistr.Web do
+    pipe_through :api
+
+    get "/", PlaylistController, :index
+    put "/", PlaylistController, :add_playlist
+  end
+
   scope "/", Playlistr.Web do
     pipe_through :browser # Use the default browser stack
 
-    get "/", PageController, :index
+    get "/*path", PageController, :index
   end
 
   # Other scopes may use custom stacks.

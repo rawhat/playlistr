@@ -12,11 +12,17 @@ defmodule Playlistr.Application do
       supervisor(Playlistr.Web.Endpoint, []),
       # Start your own worker by calling: Playlistr.Worker.start_link(arg1, arg2, arg3)
       # worker(Playlistr.Worker, [arg1, arg2, arg3]),
+      supervisor(Playlistr.Music.Supervisor, [])
     ]
 
     # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Playlistr.Supervisor]
     Supervisor.start_link(children, opts)
+  end
+
+  def config_change(changed, _new, removed) do
+    Playlistr.Web.Endpoint.config_change(changed, removed)
+    :ok
   end
 end

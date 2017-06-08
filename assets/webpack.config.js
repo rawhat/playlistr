@@ -1,4 +1,5 @@
 const path = require('path');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = {
     entry: ['babel-polyfill', './js/index.js'],
@@ -22,4 +23,10 @@ module.exports = {
             },
         ],
     },
+    plugins: [
+        new CopyWebpackPlugin([{
+            from: "./static",
+            to: path.resolve(__dirname, "../priv/static")
+        }])
+    ]
 };

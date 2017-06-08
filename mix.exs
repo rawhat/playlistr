@@ -15,8 +15,12 @@ defmodule Playlistr.Mixfile do
   #
   # Type `mix help compile.app` for more information.
   def application do
-    [mod: {Playlistr.Application, []},
-     extra_applications: [:logger, :runtime_tools]]
+   [ applications: [:bolt_sips],
+     mod: {Playlistr.Application, []},
+     extra_applications: [:logger, :runtime_tools], mod: {Bolt.Sips.Application, [
+          url: "localhost:7687",
+          basic_auth: [username: "neo4j", password: "Password12"]
+      ]}]
   end
 
   # Specifies which paths to compile per environment.
@@ -32,6 +36,8 @@ defmodule Playlistr.Mixfile do
      {:phoenix_html, "~> 2.6"},
      {:phoenix_live_reload, "~> 1.0", only: :dev},
      {:gettext, "~> 0.11"},
-     {:cowboy, "~> 1.0"}]
+     {:cowboy, "~> 1.0"},
+     {:bolt_sips, "~> 0.3"},
+     {:poison, "~> 3.1.0"}]
   end
 end
