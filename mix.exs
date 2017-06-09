@@ -15,9 +15,9 @@ defmodule Playlistr.Mixfile do
   #
   # Type `mix help compile.app` for more information.
   def application do
-   [ applications: [:bolt_sips],
-     mod: {Playlistr.Application, []},
-     extra_applications: [:logger, :runtime_tools], mod: {Bolt.Sips.Application, [
+    [mod: {Playlistr.Application, []},
+     applications: [:bolt_sips, :phoenix, :phoenix_pubsub, :phoenix_html, :cowboy, :logger, :gettext],
+     extra_applications: [:runtime_tools], mod: {Bolt.Sips.Application, [
           url: "localhost:7687",
           basic_auth: [username: "neo4j", password: "Password12"]
       ]}]

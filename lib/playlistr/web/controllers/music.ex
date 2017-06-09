@@ -1,12 +1,6 @@
 defmodule Playlistr.Music do
     use GenServer
 
-    def start_link(opts \\ %{
-            :conn => Bolt.Sips.conn()
-        }) do
-        GenServer.start_link(__MODULE__, opts)
-    end
-
     # util functions
     def get_current_epoch_time do
         DateTime.utc_now() 
@@ -88,8 +82,29 @@ defmodule Playlistr.Music do
     end
 
     # Calls
-    def get_playlists do
-        GenServer.call(__MODULE__, {:get_playlists})
+    def get_playlists(results) do
+        results 
+        |> Enum.reduce(%{}, fn (%{"playlist" => playlist, "song" => song}, map) ->
+            title = Map.get(playlist.properties, "title")
+            newSong = if song == nil, do: [], else: [song.properties]
+
+            map = if Map.has_key?(map, title), do: map, else: Map.merge(map, %{ title => playlist.properties })
+
+            {_, newMap } = map |> Map.get_and_update(title, fn list ->
+                {_, newList} = list |> Map.get_and_update(:songs, fn songList ->
+                    case songList do
+                        nil ->
+                            {nil, newSong}
+                        l ->
+                            {l, l ++ newSong}
+                    end
+                end)
+                {list, newList}
+            end)
+
+            newMap
+        end)
+        |> Map.values
     end
 
     def get_playlist(title) do
