@@ -113,7 +113,6 @@ defmodule Playlistr.Music do
                 %{}
             res ->
                 songs = res |> Enum.map(fn item ->
-                    IO.inspect item
                     case item["song"] do
                         nil ->
                             nil
