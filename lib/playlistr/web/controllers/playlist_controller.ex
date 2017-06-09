@@ -22,7 +22,7 @@ defmodule Playlistr.Web.PlaylistController do
                                 |> put_status(401)
                                 |> json(%{ :err => "Incorrect password"})
                             res ->
-                                json conn, (res |> Playlistr.Music.get_playlist)
+                                json conn, %{:playlist => (res |> Playlistr.Music.get_playlist)}
                         end
                     {:err, _} ->
                         conn
@@ -39,7 +39,7 @@ defmodule Playlistr.Web.PlaylistController do
                 """
                 case Bolt.query(Bolt.conn, cypher) do
                     {:ok, results} ->
-                        json conn, (results |> Playlistr.Music.get_playlist)
+                        json conn, %{:playlist => (results |> Playlistr.Music.get_playlist)}
                 end
             %{} ->
                 cypher = """
@@ -51,7 +51,7 @@ defmodule Playlistr.Web.PlaylistController do
                 # json conn, %{ :playlists => Playlistr.Music.get_playlists()}
                 case Bolt.query(Bolt.conn, cypher) do
                     {:ok, results} ->
-                        json conn, (results |> Playlistr.Music.get_playlists)
+                        json conn, %{:playlists => (results |> Playlistr.Music.get_playlists)}
                     {:err, _} ->
                         json conn, %{ :err => "error" }
                 end

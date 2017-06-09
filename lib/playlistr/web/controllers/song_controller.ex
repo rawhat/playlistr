@@ -48,7 +48,7 @@ defmodule Playlistr.Web.SongController do
                         songUrl |> Playlistr.Music.parse_audio
 
                     "video" ->
-                        songUrl |> PlaylistrMusic.parse_video
+                        songUrl |> Playlistr.Music.parse_video
 
                     _ ->
                         nil
