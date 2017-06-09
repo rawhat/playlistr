@@ -36,8 +36,6 @@ defmodule Playlistr.Web.Router do
 
     get "/", SongController, :index
     put "/", SongController, :add_song
-    # post "/", SongController, :get_song
-    get "/next", SongController, :next_song
   end
 
   scope "/playlist", Playlistr.Web do

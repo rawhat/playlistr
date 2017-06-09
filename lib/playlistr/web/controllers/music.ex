@@ -107,8 +107,28 @@ defmodule Playlistr.Music do
         |> Map.values
     end
 
-    def get_playlist(title) do
-        GenServer.call(__MODULE__, {:get_playlist, title})
+    def get_playlist(results) do
+        case results do
+            [] ->
+                %{}
+            res ->
+                songs = res |> Enum.map(fn item ->
+                    IO.inspect item
+                    case item["song"] do
+                        nil ->
+                            nil
+                        song ->
+                            song.properties
+                    end
+                end) |> Enum.filter(&(&1 != nil))
+                {_, playlist} = (hd res)["playlist"].properties
+                |> Map.get_and_update("password", &(if &1 == "", do: {&1, false}, else: {&1, true}))
+
+                playlist 
+                |> Map.put(:hasPassword, playlist["password"])
+                |> Map.delete("password")
+                |> Map.merge(%{ :songs => songs })
+        end 
     end
 
     def add_playlist(title, category, password, open_submissions, type, creator) do
@@ -137,8 +157,28 @@ defmodule Playlistr.Music do
         GenServer.call(__MODULE__, {:get_current_playtime, title})
     end
 
-    def get_current_song_and_playtime(title) do
-        GenServer.call(__MODULE__, {:get_current_song_and_playtime, title})
+    def get_current_song_and_playtime(results) do
+        playlist = (hd results)["playlist"].properties
+                
+        startDate = playlist |> Map.get("startDate", get_current_epoch_time())
+        time = playlist |> Map.get("currentTime", 0)
+        currentTime = time + (get_current_epoch_time() - startDate) / 1000
+
+        songs = results 
+                |> Enum.map(&(&1["songs"].properties))
+                |> Enum.sort_by(&(&1["index"]))
+
+        songs
+            |> Enum.reduce_while(%{ :song => nil, :time => -1, :length => 0 }, fn song, res ->
+                IO.inspect song["length"]
+                {songLength, _} = if is_float(song["length"]), do: {song["length"], nil}, else: Float.parse(song["length"])
+
+                if (res.length + songLength) > currentTime do
+                    { :halt, %{ :song => song, :time => currentTime - res.length } }
+                else
+                    { :cont, %{ :song => nil, :time => -1, :length => res.length + song["length"] } }
+                end
+            end)
     end
 
     def get_next_song(title) do
