@@ -1,4 +1,5 @@
-import io from 'socket.io-client';
+// import io from 'socket.io-client';
+import { Socket } from 'phoenix';
 
 import {
     doSocketConnected,
@@ -19,6 +20,8 @@ import {
 
 function socketMiddleware() {
     let socket = null;
+    let playlistsLobby = null;
+    let playlistLobby = null;
 
     const onOpen = (ws, store) => () => {
         console.log('connected!');
@@ -47,26 +50,38 @@ function socketMiddleware() {
 
         switch (type) {
             case PUSH_SOCKET_CONNECT: {
-                if (socket) socket.close();
+                if (socket) socket.disconnect();
 
-                socket = io.connect();
-                socket.on('connect', onOpen(socket, store));
-                socket.on('disconnect', onClose(socket, store));
-                socket.on('new-playlist', onNewPlaylist(socket, store));
-                socket.on('new-song', onNewSong(socket, store));
+                socket = new Socket('/socket');
+                socket.connect();
+                playlistsLobby = socket.channel('playlists:lobby');
+                playlistsLobby.join().receive('ok', onOpen(socket, store));
+
+                playlistsLobby.on('new-playlist', onNewPlaylist(socket, store));
                 break;
             }
 
             case PUSH_SOCKET_DISCONNECT: {
-                if (socket) socket.close();
+                if (socket) socket.disconnect();
 
                 socket = null;
                 break;
             }
 
             case PUSH_SOCKET_CHANGE: {
-                console.log('pushing change');
-                socket.emit('change-playlist', payload);
+                console.log(`changing to ${payload}`);
+                let { old_playlist, new_playlist } = payload;
+
+                if (old_playlist && playlistLobby) {
+                    playlistLobby.leave();
+                }
+
+                playlistLobby = socket.channel(`playlist:${new_playlist}`);
+                playlistLobby.join().receive('ok', () => {
+                    console.log(`connected to ${new_playlist}`);
+                });
+                playlistLobby.on('new-song', onNewSong(socket, store));
+
                 break;
             }
 

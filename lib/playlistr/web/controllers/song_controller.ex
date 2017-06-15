@@ -83,6 +83,9 @@ defmodule Playlistr.Web.SongController do
                                 |> json(%{ :error => "Song not added" })
 
                             {:ok, results} ->
+                                addedSong = results[0]["song"].properties
+                                Playlistr.Web.Endpoint.broadcast("playlist:" <> title, "new-song", addedSong)
+
                                 conn
                                 |> put_status(201)
                                 |> json(%{ :status => "Created"})

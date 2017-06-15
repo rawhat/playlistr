@@ -3,6 +3,8 @@ defmodule Playlistr.Web.UserSocket do
 
   ## Channels
   # channel "room:*", Playlistr.Web.RoomChannel
+  channel "playlist:*", Playlistr.PlaylistChannel
+  channel "playlists:*", Playlistr.PlaylistsChannel
 
   ## Transports
   transport :websocket, Phoenix.Transports.WebSocket
@@ -20,6 +22,7 @@ defmodule Playlistr.Web.UserSocket do
   # See `Phoenix.Token` documentation for examples in
   # performing token verification on connect.
   def connect(_params, socket) do
+    IO.puts "connecting!"
     {:ok, socket}
   end
 

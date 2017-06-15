@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { ButtonGroup, Button, Row, Col } from 'react-bootstrap';
 import ProgressBar from './progress-bar';
 import { connect } from 'react-redux';
+import _ from 'lodash';
 
 import { doTogglePauseStatus, doGetNextSong } from '../ducks/playlist';
 
@@ -232,7 +233,7 @@ const mapStateToProps = state => {
         currentTime: state.playlist.currentPlaytime,
         currentSong: state.playlist.currentSong,
         paused: state.playlist.paused,
-        username: state.auth.user.username,
+        username: _.get(state, 'auth.user.username', null),
         creator: state.playlist.currentPlaylist.creator,
         totalTime: state.playlist.totalTime,
     };

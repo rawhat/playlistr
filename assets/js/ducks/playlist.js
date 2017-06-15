@@ -1,5 +1,6 @@
 import { ajax } from 'rxjs/observable/dom/ajax';
 import { of as of$ } from 'rxjs/observable/of';
+import _get from 'lodash/get';
 
 import { doHidePasswordModal } from '../ducks/protected-playlist';
 
@@ -325,14 +326,20 @@ export const fetchPlaylistEpic = (action$, store) =>
             .map(response => response.response)
             .flatMap(res => {
                 let playlistTitle = res.playlist.title;
+
+                let currentTitle = _get(
+                    store.getState(),
+                    'playlist.currentPlaylist.title',
+                    null
+                );
+
                 return of$(
                     doSetCurrentPlaylist(res.playlist),
-                    doSocketChangePlaylist(
-                        store.getState().playlist.currentPlaylist.title,
-                        playlistTitle
-                    ),
+                    doSocketChangePlaylist(currentTitle, playlistTitle),
                     doGoLiveOnCurrentPlaylist(playlistTitle)
-                );
+                ).catch(err => {
+                    console.log(err);
+                });
             })
             .catch(err => of$(err).map(doSetPlaylistError))
     );

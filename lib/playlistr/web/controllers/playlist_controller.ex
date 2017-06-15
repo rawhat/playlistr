@@ -91,7 +91,15 @@ defmodule Playlistr.Web.PlaylistController do
                         |> put_status(400)
                         |> json(%{ :error => "Playlist not created."})
 
-                    {:ok, _} ->
+                    {:ok, result} ->
+                        # Playlistr.Web.Endpoint.broadcast(topic, event, msg)
+                        addedPlaylist = result[0]["playlist"].properties
+                        addedPlaylist = addedPlaylist
+                            |> Map.put_new("hasPassword", (if addedPlaylist["password"] == "", do: false, else: true))
+                            |> Map.delete("password")
+                            
+                        Playlistr.Web.Endpoint.broadcast("playlist:lobby", "new-playlist", addedPlaylist)
+
                         conn
                         |> put_status(201)
                         |> json(%{ :status => "Created" })
