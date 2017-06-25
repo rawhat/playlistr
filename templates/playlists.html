@@ -1,7 +1,0 @@
-{% if len(playlists) is not 0 %}
-  {% for playlist in playlists %}
-    <button type="button" class="list-group-item playlist-selector pull-left" id="{{ playlist }}">{{ playlist }}</button>
-  {% end %}
-{% else %}
-    <div class="panel panel-default" id="empty-playlist"><div class="panel-body">There's nothing here yet</div></div>
-{% end %}
