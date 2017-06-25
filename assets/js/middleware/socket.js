@@ -1,5 +1,7 @@
 // import io from 'socket.io-client';
+// import { Socket } from 'phoenix';
 import { Socket } from 'phoenix';
+// const Socket = {};
 
 import {
     doSocketConnected,

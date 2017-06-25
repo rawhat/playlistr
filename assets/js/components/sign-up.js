@@ -9,7 +9,7 @@ class SignUp extends Component {
         error: PropTypes.string
     }
 
-    signUp = async () => {
+    signUp = () => {
         let username = this.username.value;
         let email = this.email.value;
         let password = this.password.value;

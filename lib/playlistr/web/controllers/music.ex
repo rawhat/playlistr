@@ -3,7 +3,7 @@ defmodule Playlistr.Music do
 
     # util functions
     def get_current_epoch_time do
-        DateTime.utc_now() 
+        DateTime.utc_now()
         |> DateTime.to_unix(:millisecond)
     end
 
@@ -29,7 +29,7 @@ defmodule Playlistr.Music do
         case isVideo do
             true ->
                 formats
-                    |> Enum.filter(fn format -> 
+                    |> Enum.filter(fn format ->
                         Map.has_key?(format, "vcodec") && format["vcodec"] != "none" && Map.has_key?(format, "resolution")
                     end)
                     |> Enum.sort(fn(video1, video2) ->
@@ -83,7 +83,7 @@ defmodule Playlistr.Music do
 
     # Calls
     def get_playlists(results) do
-        results 
+        results
         |> Enum.reduce(%{}, fn (%{"playlist" => playlist, "song" => song}, map) ->
             title = Map.get(playlist.properties, "title")
             newSong = if song == nil, do: [], else: [song.properties]
@@ -123,11 +123,11 @@ defmodule Playlistr.Music do
                 {_, playlist} = (hd res)["playlist"].properties
                 |> Map.get_and_update("password", &(if &1 == "", do: {&1, false}, else: {&1, true}))
 
-                playlist 
+                playlist
                 |> Map.put(:hasPassword, playlist["password"])
                 |> Map.delete("password")
                 |> Map.merge(%{ :songs => songs })
-        end 
+        end
     end
 
     def add_playlist(title, category, password, open_submissions, type, creator) do
@@ -158,26 +158,31 @@ defmodule Playlistr.Music do
 
     def get_current_song_and_playtime(results) do
         playlist = (hd results)["playlist"].properties
-                
-        startDate = playlist |> Map.get("startDate", get_current_epoch_time())
-        time = playlist |> Map.get("currentTime", 0)
-        currentTime = time + (get_current_epoch_time() - startDate) / 1000
 
-        songs = results 
+        currentTime = get_current_epoch_time()
+
+        startDate = playlist |> Map.get("startDate", currentTime)
+        startDate = if is_integer(startDate), do: startDate, else: String.to_integer(startDate)
+
+        time = playlist |> Map.get("currentTime", 0)
+
+        currentTime = time + (currentTime - startDate) / 1000
+
+        songs = results
                 |> Enum.map(&(&1["songs"].properties))
                 |> Enum.sort_by(&(&1["index"]))
 
-        songs
+        %{:song => songs
             |> Enum.reduce_while(%{ :song => nil, :time => -1, :length => 0 }, fn song, res ->
-                IO.inspect song["length"]
-                {songLength, _} = if is_float(song["length"]), do: {song["length"], nil}, else: Float.parse(song["length"])
+
+                songLength = if is_float(song["length"]), do: song["length"], else: (song["length"] / 1)
 
                 if (res.length + songLength) > currentTime do
-                    { :halt, %{ :song => song, :time => currentTime - res.length } }
+                    { :halt, %{ :songUrl => (song |> Map.get("streamUrl")), :time => currentTime - res.length } }
                 else
-                    { :cont, %{ :song => nil, :time => -1, :length => res.length + song["length"] } }
+                    { :cont, %{ :songUrl => nil, :time => -1, :length => res.length + song["length"] } }
                 end
-            end)
+            end), :startDate => startDate}
     end
 
     def get_next_song(title) do
@@ -254,10 +259,10 @@ defmodule Playlistr.Music do
 
     def handle_call({:add_song, song, title}, _from, state) do
         case Bolt.Sips.query(
-                state.conn, 
+                state.conn,
                 "MATCH (p:Playlist)-[:HAS]-(s:Song) WHERE p.title = '#{title}' RETURN s"
             ) do
-                {:ok, results} -> 
+                {:ok, results} ->
                     index = length(results)
 
                     case Bolt.Sips.query(
@@ -298,12 +303,12 @@ defmodule Playlistr.Music do
 
     def handle_call({:get_songs, title}, _from, state) do
         songs = case Bolt.Sips.query(
-                state.conn, 
+                state.conn,
                 "MATCH (p:Playlist)-[:HAS]-(s:Song) WHERE p.title = '#{title}' RETURN s"
             ) do
-                {:ok, results} -> 
+                {:ok, results} ->
                     results |> Enum.map(&(&1["s"].properties))
-            
+
                 _ -> []
             end
 
@@ -322,7 +327,7 @@ defmodule Playlistr.Music do
                 playlist = (hd results)["p"].properties
 
                 time = playlist |> Map.get("currentTime", 0)
-                startDate = playlist 
+                startDate = playlist
                     |> Map.get("startDate", get_current_epoch_time() |> Integer.to_string)
                     |> String.to_integer
 
@@ -344,7 +349,7 @@ defmodule Playlistr.Music do
         ) do
             {:ok, _} ->
                 {:reply, :ok, state}
-                
+
             {:err, _} ->
                 {:reply, :err, state}
         end
@@ -361,7 +366,7 @@ defmodule Playlistr.Music do
         ) do
             {:ok, results} ->
                 playlist = (hd results)["playlist"].properties
-                
+
                 startDate = playlist |> Map.get("startDate", get_current_epoch_time())
                 time = playlist |> Map.get("currentTime", 0)
                 currentTime = time + (get_current_epoch_time() - startDate) / 1000

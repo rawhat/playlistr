@@ -19,7 +19,16 @@ defmodule Playlistr.Web.SongController do
                         |> json(%{ :error => "Playlist doesn't exist." })
 
                     {:ok, results} ->
-                        json conn, (results |> Playlistr.Music.get_current_song_and_playtime)
+                        %{:song => songData, :startDate => startDate} = results |> Playlistr.Music.get_current_song_and_playtime
+                        case Bolt.query(Bolt.conn, """
+                            MATCH (p:Playlist)
+                            WHERE p.title = '#{title}'
+                            SET p.startDate = #{startDate}
+                            RETURN p AS playlist
+                        """) do
+                            _ ->
+                                json conn, songData
+                        end
 
                     {:err, _} ->
                         conn
@@ -36,6 +45,10 @@ defmodule Playlistr.Web.SongController do
     end
 
     def add_song(conn, params) do
+        conn = conn |> fetch_session
+
+        currentUser = conn |> get_session(:user)
+
         case params do
             # Also check openSubmissions / creator? also maybe password?
             # Might not need to check password if they have access to the playlist
@@ -56,10 +69,10 @@ defmodule Playlistr.Web.SongController do
 
                 case processedLink do
                     nil ->
-                        conn 
+                        conn
                         |> put_status(400)
                         |> json(%{ :error => "Invalid type parameter" })
-                    
+
                     link ->
                         cypher = """
                             MATCH (p:Playlist) WHERE p.title = '#{title}'

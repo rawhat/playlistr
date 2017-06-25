@@ -1,8 +1,12 @@
 const path = require('path');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 
+console.log(path.resolve(__dirname, '../deps'));
+
 module.exports = {
-    entry: ['babel-polyfill', './js/index.js'],
+    entry: {
+        main: './js/index.js'
+    },
     output: {
         path: path.resolve(__dirname, '/priv/static'),
         filename: 'js/[name].js',
@@ -15,7 +19,12 @@ module.exports = {
                 loader: 'babel-loader',
                 query: {
                     presets: [
-                        ['es2015', { modules: false }],
+                        [
+                            'es2015',
+                            {
+                                modules: false,
+                            },
+                        ],
                         'stage-0',
                         'react',
                     ],
@@ -24,9 +33,11 @@ module.exports = {
         ],
     },
     plugins: [
-        new CopyWebpackPlugin([{
-            from: "./static",
-            to: path.resolve(__dirname, "../priv/static")
-        }])
-    ]
+        new CopyWebpackPlugin([
+            {
+                from: './static',
+                to: path.resolve(__dirname, '../priv/static'),
+            },
+        ]),
+    ],
 };

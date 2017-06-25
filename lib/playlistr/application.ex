@@ -13,7 +13,8 @@ defmodule Playlistr.Application do
       # Start your own worker by calling: Playlistr.Worker.start_link(arg1, arg2, arg3)
       # worker(Playlistr.Worker, [arg1, arg2, arg3]),
       # supervisor(Playlistr.Music.Supervisor, [])
-      worker(Bolt.Sips, [Application.get_env(:bolt_sips, Bolt)])
+      worker(Bolt.Sips, [Application.get_env(:bolt_sips, Bolt)]),
+      worker(Playlistr.MusicUpdater, [])
     ]
 
     # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html
