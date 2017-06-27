@@ -1,33 +1,29 @@
 const path = require('path');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 
-console.log(path.resolve(__dirname, '../deps'));
-
 module.exports = {
     entry: {
-        main: './js/index.js'
+        main: './elm/index.js',
     },
     output: {
         path: path.resolve(__dirname, '/priv/static'),
         filename: 'js/[name].js',
         publicPath: 'http://localhost:8080/',
     },
+    devServer: {
+        headers: {
+            'Access-Control-Allow-Origin': '*',
+        },
+    },
     module: {
-        loaders: [
+        rules: [
             {
-                exclude: /node_modules/,
-                loader: 'babel-loader',
-                query: {
-                    presets: [
-                        [
-                            'es2015',
-                            {
-                                modules: false,
-                            },
-                        ],
-                        'stage-0',
-                        'react',
-                    ],
+                test: /\.elm$/,
+                exclude: [/elm-stuff/, /node_modules/],
+                loader: 'elm-webpack-loader',
+                options: {
+                    verbose: true,
+                    warn: true,
                 },
             },
         ],

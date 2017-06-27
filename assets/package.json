@@ -18,6 +18,7 @@
     "bluebird": "^3.5.0",
     "chai": "^4.0.1",
     "copy-webpack-plugin": "^4.0.1",
+    "elm-webpack-loader": "^4.3.1",
     "eslint": "^3.19.0",
     "eslint-config-es2015-react": "^0.2.1",
     "eslint-plugin-react": "^7.0.0",
