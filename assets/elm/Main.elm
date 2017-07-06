@@ -1,13 +1,25 @@
 module Main exposing (..)
 
+import Http
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Navigation
 
 
+type alias Username =
+    String
+
+
+type alias Password =
+    String
+
+
 type Msg
     = UrlChange Navigation.Location
+    | FetchPlaylists
+    | FetchPlaylist String
+    | FetchPasswordPlaylist Username Password
 
 
 type alias Model =
@@ -19,11 +31,25 @@ init location =
 
 
 view model =
-    div [] [ text "Hello, world!" ]
+    div []
+        [ text "Hello, world!"
+        , button [] [ text "Click me!" ]
+        ]
 
 
 update msg model =
-    ( model, Cmd.none )
+    case msg of
+        FetchPlaylists ->
+            ( model, Cmd.none )
+
+        FetchPlaylist title ->
+            ( model, Cmd.none )
+
+        FetchPasswordPlaylist username password ->
+            ( model, Cmd.none )
+
+        _ ->
+            ( model, Cmd.none )
 
 
 main =
