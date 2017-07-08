@@ -120,12 +120,11 @@ defmodule Playlistr.Music do
                             song.properties
                     end
                 end) |> Enum.filter(&(&1 != nil))
-                {_, playlist} = (hd res)["playlist"].properties
-                |> Map.get_and_update("password", &(if &1 == "", do: {&1, false}, else: {&1, true}))
+                playlist = (hd res)["playlist"].properties
+                # |> Map.get_and_update("password", &(if &1 == "", do: {&1, false}, else: {&1, true}))
 
                 playlist
-                |> Map.put(:hasPassword, playlist["password"])
-                |> Map.delete("password")
+                # |> Map.put(:hasPassword, playlist["password"])
                 |> Map.merge(%{ :songs => songs })
         end
     end

@@ -22,7 +22,7 @@ defmodule Playlistr.Web.PlaylistController do
                                 |> put_status(401)
                                 |> json(%{ :err => "Incorrect password"})
                             res ->
-                                json conn, %{:playlist => (res |> Playlistr.Music.get_playlist)}
+                                json conn, res |> Playlistr.Music.get_playlist
                         end
                     {:err, _} ->
                         conn
@@ -39,7 +39,7 @@ defmodule Playlistr.Web.PlaylistController do
                 """
                 case Bolt.query(Bolt.conn, cypher) do
                     {:ok, results} ->
-                        json conn, %{:playlist => (results |> Playlistr.Music.get_playlist)}
+                        json conn, results |> Playlistr.Music.get_playlist
                 end
             %{} ->
                 cypher = """
@@ -60,7 +60,7 @@ defmodule Playlistr.Web.PlaylistController do
 
     def add_playlist(conn, params) do
         case params do
-            %{ 
+            %{
                 "title" => title,
                 "category" => category,
                 "password" => password,
@@ -97,7 +97,7 @@ defmodule Playlistr.Web.PlaylistController do
                         addedPlaylist = addedPlaylist
                             |> Map.put_new("hasPassword", (if addedPlaylist["password"] == "", do: false, else: true))
                             |> Map.delete("password")
-                            
+
                         Playlistr.Web.Endpoint.broadcast("playlist:lobby", "new-playlist", addedPlaylist)
 
                         conn
