@@ -4,7 +4,7 @@ import Http
 import Json.Decode as Decode
 import Json.Decode.Pipeline exposing (decode, required)
 import RemoteData
-import Models exposing (Playlist, Playlists, PlaylistHolder)
+import Models exposing (Playlist, Playlists, PlaylistHolder, Song)
 import Msgs exposing (Msg)
 
 
@@ -37,6 +37,25 @@ playlistFetchDecoder =
 playlistDecoder : Decode.Decoder Playlist
 playlistDecoder =
     decode Playlist
+        |> required "type" Decode.string
         |> required "title" Decode.string
         |> required "password" Decode.string
-        |> required "type" Decode.string
+        |> required "openSubmissions" Decode.bool
+        |> required "length" Decode.int
+        |> required "isPaused" Decode.bool
+        |> required "hasPlayed" Decode.bool
+        |> required "currentTime" Decode.int
+        |> required "currentSongIndex" Decode.int
+        |> required "category" Decode.string
+        |> required "songs" (Decode.list songDecoder)
+
+
+songDecoder : Decode.Decoder Song
+songDecoder =
+    decode Song
+        |> required "url" Decode.string
+        |> required "streamUrl" Decode.string
+        |> required "length" Decode.int
+        |> required "isVideo" Decode.bool
+        |> required "info" Decode.string
+        |> required "index" Decode.int

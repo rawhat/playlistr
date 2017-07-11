@@ -8,9 +8,17 @@ type alias PlaylistHolder =
 
 
 type alias Playlist =
-    { title : String
+    { type_ : String
+    , title : String
     , password : String
-    , type_ : String
+    , openSubmissions : Bool
+    , length : Int
+    , isPaused : Bool
+    , hasPlayed : Bool
+    , currentTime : Int
+    , currentSongIndex : Int
+    , category : String
+    , songs : List Song
     }
 
 
@@ -21,6 +29,10 @@ type alias Playlists =
 type alias Song =
     { url : String
     , streamUrl : String
+    , length : Int
+    , isVideo : Bool
+    , info : String
+    , index : Int
     }
 
 
