@@ -1,7 +1,7 @@
 module Msgs exposing (..)
 
 import Navigation
-import Models exposing (Playlist, Playlists, PlaylistHolder)
+import Models exposing (LiveData, Playlist, Playlists, PlaylistHolder)
 import RemoteData exposing (WebData)
 
 
@@ -11,8 +11,11 @@ type Msg
     | StartFetchPlaylist String
     | FetchPlaylist (WebData Playlist)
     | FetchPasswordPlaylist String String
+    | ChangeActivePlaylist String
     | AddSongUrl
     | ChangeSongUrl String
     | RewindVideo Int
     | PauseMedia
     | AdjustVolume String
+    | StartGoLive String
+    | GoLive (WebData LiveData)

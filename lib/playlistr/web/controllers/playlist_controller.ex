@@ -34,6 +34,7 @@ defmodule Playlistr.Web.PlaylistController do
                 cypher = """
                     MATCH (p:Playlist)
                     WHERE p.title = '#{title}'
+                    AND (p.password = null or p.password = "")
                     OPTIONAL MATCH (p)-[:HAS]-(s:Song)
                     RETURN p AS playlist, s AS song
                 """
@@ -75,7 +76,7 @@ defmodule Playlistr.Web.PlaylistController do
                         title: "#{playlist.title}",
                         category: "#{playlist.category}",
                         password: "#{playlist.password}",
-                        openSubmissions: "#{playlist.open_submissions}",
+                        openSubmissions: #{playlist.open_submissions},
                         type: "#{playlist.type}",
                         length: "#{playlist.length}",
                         isPaused: "#{playlist.is_paused}",

@@ -3,6 +3,12 @@ module Models exposing (..)
 import RemoteData exposing (WebData)
 
 
+type alias LiveData =
+    { songUrl : String
+    , time : Float
+    }
+
+
 type alias PlaylistHolder =
     { playlist : Playlist }
 
@@ -11,6 +17,14 @@ type alias Playlist =
     { title : String
     , password : String
     , type_ : String
+    , openSubmissions : Bool
+    , length : Int
+    , isPaused : Bool
+    , hasPlayed : Bool
+    , currentTime : Int
+    , currentSongIndex : Int
+    , category : String
+    , songs : List Song
     }
 
 
@@ -20,19 +34,25 @@ type alias Playlists =
 
 type alias Song =
     { url : String
+    , title : String
     , streamUrl : String
+    , length : Int
+    , isVideo : Bool
+    , info : String
+    , index : Int
     }
 
 
 type alias Model =
-    { playlists : WebData Playlists
-    , username : Maybe String
-    , selectedPlaylist : String
+    { addSongError : Bool
     , addSongUrl : String
-    , addSongError : Bool
     , currentPlaylist : WebData Playlist
-    , currentSong : Maybe Song
+    , currentPlaytime : Float
+    , currentSongUrl : String
     , paused : Bool
+    , playlists : WebData Playlists
+    , selectedPlaylist : String
+    , username : Maybe String
     , volume : Int
     }
 
@@ -40,12 +60,13 @@ type alias Model =
 initialModel : Model
 initialModel =
     Model
-        RemoteData.Loading
-        Nothing
+        False
         ""
+        RemoteData.NotAsked
+        0.0
         ""
         False
         RemoteData.NotAsked
+        ""
         Nothing
-        False
         25

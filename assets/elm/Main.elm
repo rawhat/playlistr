@@ -3,12 +3,13 @@ module Main exposing (..)
 -- import Http
 
 import Html exposing (..)
+import RemoteData exposing (WebData)
 
 
 -- import Html.Attributes exposing (..)
 -- import Html.Events exposing (..)
 
-import Commands exposing (fetchPlaylists, fetchPlaylistByTitle)
+import Commands exposing (fetchPlaylists, fetchPlaylistByTitle, goLiveOnPlaylist)
 import Msgs exposing (..)
 import Models exposing (Playlist)
 
@@ -83,15 +84,42 @@ update msg model =
         StartFetchPlaylist title ->
             ( model, fetchPlaylistByTitle title )
 
+        StartGoLive title ->
+            ( model, goLiveOnPlaylist title )
+
         FetchPlaylist response ->
             let
-                _ =
-                    Debug.log "res" response
+                selectedPlaylist =
+                    case response of
+                        RemoteData.Success res ->
+                            res.title
+
+                        _ ->
+                            ""
 
                 updatedModel =
-                    { model | currentPlaylist = response }
+                    { model | currentPlaylist = response, selectedPlaylist = selectedPlaylist }
             in
                 ( updatedModel, Cmd.none )
+
+        GoLive response ->
+            let
+                newModel =
+                    case response of
+                        RemoteData.Success res ->
+                            let
+                                song =
+                                    res.songUrl
+
+                                time =
+                                    res.time
+                            in
+                                { model | currentSongUrl = song, currentPlaytime = time }
+
+                        _ ->
+                            model
+            in
+                ( newModel, Cmd.none )
 
         _ ->
             ( model, Cmd.none )

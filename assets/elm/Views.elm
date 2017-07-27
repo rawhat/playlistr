@@ -3,7 +3,24 @@ module Views exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick, onInput)
-import Css exposing (asPairs, backgroundColor, marginTop, marginLeft, marginRight, paddingBottom, paddingRight, px)
+import Css
+    exposing
+        ( absolute
+        , asPairs
+        , backgroundColor
+        , borderRadius
+        , marginTop
+        , marginLeft
+        , marginRight
+        , paddingBottom
+        , paddingRight
+        , pct
+        , px
+        , position
+        , relative
+        , right
+        , top
+        )
 import Models exposing (Model, Playlists, Playlist)
 import RemoteData exposing (WebData)
 import Msgs exposing (Msg)
@@ -40,7 +57,7 @@ mainView model =
                                         , paddingBottom (px 10)
                                         ]
                                     ]
-                                    [ div [ class "pull-left" ] [ goLiveLink ]
+                                    [ div [ class "pull-left" ] [ goLiveLink model.selectedPlaylist ]
                                     , div [ class "pull-right" ] [ exportPlaylistLink ]
                                     ]
                                 , contentSection model
@@ -105,7 +122,7 @@ playlistList response selectedPlaylist =
                 ul [ class "list-group" ] content
 
         RemoteData.Failure error ->
-            text (toString error)
+            text "Error loading playlists."
 
 
 playlistSidebar : Model -> Html Msg
@@ -185,9 +202,14 @@ customAudioBar model =
     text "audioBar"
 
 
-goLiveLink : Html msg
-goLiveLink =
-    text "goLiveLink"
+goLiveLink : String -> Html Msg
+goLiveLink playlist =
+    case playlist of
+        "" ->
+            text ""
+
+        title ->
+            a [ onClick (Msgs.StartGoLive title) ] [ text "Go Live" ]
 
 
 exportPlaylistLink : Html msg
@@ -200,20 +222,31 @@ contentSection model =
     case model.currentPlaylist of
         RemoteData.Success playlist ->
             if playlist.type_ == "music" then
-                songArea model
+                songArea playlist
             else
                 div [ class "video-area" ]
                     [ videoPlayer model
-                    , songArea model
+                    , songArea playlist
                     ]
 
         _ ->
             text ""
 
 
-songArea : Model -> Html Msg
-songArea model =
-    text "songArea"
+songArea : Playlist -> Html Msg
+songArea playlist =
+    div []
+        (List.map
+            (\song ->
+                playlistSong
+                    song.info
+                    song.length
+                    ((song.index == playlist.currentSongIndex)
+                        && (not playlist.isPaused)
+                    )
+            )
+            playlist.songs
+        )
 
 
 playlistSong : String -> Int -> Bool -> Html Msg
@@ -238,23 +271,30 @@ playlistSong info length selected =
                 toString seconds
 
         time =
-            (toString mins) ++ secs
+            (toString mins) ++ ":" ++ secs
 
         -- add in local state?
         hiddenContent =
-            ul [ class "list-group" ]
-                [ li [ class "list-group-item" ]
-                    [ span [ class "pull-right" ] [ text time ]
-                    , div [ class "clearfix" ] []
-                    ]
+            div [ class "panel-body" ]
+                [ div [ class "pull-right" ] [ text time ]
+                , div [ class "clearfix" ] []
                 ]
+
+        -- [ ul [ class "list-group" ]
+        --     [ li [ class "list-group-item" ]
+        --         [ span [ class "pull-right" ] [ text time ]
+        --         , div [ class "clearfix" ] []
+        --         ]
+        --     ]
+        -- ]
     in
         div [ class "panel panel-default" ]
             [ div [ class "panel-heading" ]
                 [ h4 [ class "panel-title pull-left" ] [ text info ]
                 , playingIcon
-                , hiddenContent
+                , div [ class "clearfix" ] []
                 ]
+            , hiddenContent
             ]
 
 
@@ -262,23 +302,49 @@ videoPlayer : Model -> Html Msg
 videoPlayer model =
     let
         videoSource =
-            case model.currentSong of
-                Just source ->
-                    [ src source.streamUrl ]
-
-                Nothing ->
+            case model.currentSongUrl of
+                "" ->
                     []
 
-        videoHidden =
-            case model.currentSong of
-                Just _ ->
-                    [ hidden False ]
+                song ->
+                    [ src song ]
 
-                Nothing ->
+        videoHidden =
+            case model.currentSongUrl of
+                "" ->
                     [ hidden True ]
+
+                _ ->
+                    [ hidden False ]
 
         videoTag =
             video ([ controls False, style [ ( "width", "85%" ) ] ] ++ videoSource ++ videoHidden) []
+
+        playPauseButton =
+            case model.currentPlaylist of
+                RemoteData.Success playlist ->
+                    span
+                        [ class
+                            ("glyphicon glyphicon-"
+                                ++ (if playlist.isPaused then
+                                        "play"
+                                    else
+                                        "pause"
+                                   )
+                            )
+                        ]
+                        []
+
+                _ ->
+                    text ""
+
+        currentProgressBar =
+            case model.currentPlaylist of
+                RemoteData.Success playlist ->
+                    progressBar playlist
+
+                _ ->
+                    text ""
     in
         div []
             [ div [ class "row" ]
@@ -286,39 +352,71 @@ videoPlayer model =
             , div [ class "row", style [ ( "margin", "20px auto" ) ] ]
                 [ div [ class "col-md-3" ]
                     [ div [ class "btn-group" ]
-                        [ button [ class "btn btn-primary", onClick (Msgs.RewindVideo 30) ] [ text "<<" ]
-                        , button [ class "btn btn-primary", onClick (Msgs.RewindVideo 15) ] [ text "<" ]
+                        [ button [ class "btn btn-primary", onClick (Msgs.RewindVideo 30) ]
+                            [ span [ class "glyphicon glyphicon-fast-backward" ] [] ]
+                        , button [ class "btn btn-primary", onClick (Msgs.RewindVideo 15) ]
+                            [ span [ class "glyphicon glyphicon-backward" ] [] ]
                         , button [ class "btn btn-primary", onClick (Msgs.PauseMedia) ]
-                            [ span
-                                [ class
-                                    (if model.paused then
-                                        "play"
-                                     else
-                                        "pause"
-                                    )
-                                ]
-                                []
-                            ]
+                            [ playPauseButton ]
                         ]
                     ]
                 , div [ class "col-md-7" ]
-                    [ progressBar model ]
+                    [ currentProgressBar ]
                 , div [ class "col-md-2" ]
                     [ volumeControl model ]
                 ]
             ]
 
 
-progressBar : Model -> Html Msg
-progressBar model =
-    text "progressBar"
+progressBar : Playlist -> Html Msg
+progressBar playlist =
+    let
+        barWidth =
+            if playlist.length == 0 then
+                (pct 0)
+            else
+                (pct ((toFloat playlist.currentTime) / ((toFloat playlist.length) * 100)))
+
+        currTimeString =
+            "0"
+
+        totalTimeString =
+            "100"
+    in
+        div
+            [ styles
+                [ backgroundColor (Css.hex "a9a9a9")
+                , borderRadius (px 3)
+                , top (px 3)
+                , Css.width (pct 100)
+                , Css.height (px 45)
+                ]
+            ]
+            [ div
+                [ styles
+                    [ backgroundColor (Css.hex "375a7f")
+                    , borderRadius (px 3)
+                    , Css.width barWidth
+                    , Css.height (px 45)
+                    ]
+                ]
+                []
+            , div
+                [ styles
+                    [ position absolute
+                    , top (px 12)
+                    , right (px 20)
+                    ]
+                ]
+                [ text (currTimeString ++ " / " ++ totalTimeString) ]
+            ]
 
 
 volumeControl : Model -> Html Msg
 volumeControl model =
     input
         [ type_ "range"
-        , style [ ( "position", "relative" ), ( "top", "12px" ) ]
+        , styles [ position relative, top (px 12) ]
         , Html.Attributes.min "0"
         , Html.Attributes.max "100"
         , defaultValue "25"

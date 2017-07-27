@@ -172,14 +172,14 @@ defmodule Playlistr.Music do
                 |> Enum.sort_by(&(&1["index"]))
 
         %{:song => songs
-            |> Enum.reduce_while(%{ :song => nil, :time => -1, :length => 0 }, fn song, res ->
+            |> Enum.reduce_while(%{ :song => nil, :time => -1.0, :length => 0 }, fn song, res ->
 
                 songLength = if is_float(song["length"]), do: song["length"], else: (song["length"] / 1)
 
                 if (res.length + songLength) > currentTime do
                     { :halt, %{ :songUrl => (song |> Map.get("streamUrl")), :time => currentTime - res.length } }
                 else
-                    { :cont, %{ :songUrl => nil, :time => -1, :length => res.length + song["length"] } }
+                    { :cont, %{ :songUrl => nil, :time => -1.0, :length => res.length + song["length"] } }
                 end
             end), :startDate => startDate}
     end
