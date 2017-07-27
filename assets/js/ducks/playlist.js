@@ -31,6 +31,7 @@ const TOGGLE_PAUSE_STATUS = 'playlistr/playlist/TOGGLE_PAUSE_STATUS';
 const TOGGLE_PAUSE = 'playlistr/playlist/TOGGLE_PAUSE';
 const UPDATE_PLAY_TIME = 'playlistr/playlist/UPDATE_PLAY_TIME';
 const GET_NEXT_SONG = 'playlistr/playlist/GET_NEXT_SONG';
+const REFRESH_PLAYLIST = 'playlistr/playlist/REFRESH_PLAYLIST';
 
 const initialState = {
     playlists: [],
@@ -62,7 +63,7 @@ export default function playlistReducer(state = initialState, action) {
         }
 
         case UPDATE_LIVE_PLAYLIST: {
-            const { songUrl, time } = payload;
+            const { songUrl, time, hasPlayed } = payload;
 
             let currentSong = state.currentSong;
             // new song, so update URL
@@ -81,6 +82,10 @@ export default function playlistReducer(state = initialState, action) {
                 currentSong,
                 currentPlaytime,
                 paused,
+                currentPlaylist: {
+                    ...state.currentPlaylist,
+                    hasPlayed,
+                },
             };
         }
 
@@ -196,6 +201,7 @@ export function doSetPlaylists(playlists) {
 }
 
 export function doSetPlaylistError(error) {
+    console.error(error);
     return {
         type: SET_PLAYLIST_ERROR,
         payload: !!error,
@@ -287,10 +293,10 @@ export function doGoLiveOnCurrentPlaylist() {
     };
 }
 
-export function doUpdateLivePlaylist(songUrl, time) {
+export function doUpdateLivePlaylist(songUrl, time, hasPlayed) {
     return {
         type: UPDATE_LIVE_PLAYLIST,
-        payload: { songUrl, time },
+        payload: { songUrl, time, hasPlayed },
     };
 }
 
@@ -303,6 +309,12 @@ function doClearPlaylistCreator() {
 export function doGetNextSong() {
     return {
         type: GET_NEXT_SONG,
+    };
+}
+
+export function doRefreshPlaylist() {
+    return {
+        type: REFRESH_PLAYLIST,
     };
 }
 
@@ -336,7 +348,7 @@ export const fetchPlaylistEpic = (action$, store) =>
                 return of$(
                     doSetCurrentPlaylist(res.playlist),
                     doSocketChangePlaylist(currentTitle, playlistTitle),
-                    doGoLiveOnCurrentPlaylist(playlistTitle)
+                    doGoLiveOnCurrentPlaylist()
                 ).catch(err => {
                     console.log(err);
                 });
@@ -360,7 +372,7 @@ export const fetchPasswordPlaylistEpic = (action$, store) =>
                         store.getState().playlist.currentPlaylist.title,
                         playlistTitle
                     ),
-                    doGoLiveOnCurrentPlaylist(playlistTitle)
+                    doGoLiveOnCurrentPlaylist()
                 );
             })
             .catch(err => of$(err).map(doSetPlaylistError))
@@ -369,11 +381,14 @@ export const fetchPasswordPlaylistEpic = (action$, store) =>
 export const goLiveOnPlaylistEpic = (action$, store) =>
     action$.ofType(GO_LIVE_ON_PLAYLIST).switchMap(() =>
         ajax({
-            url: `/song?playlist=${store.getState().playlist.currentPlaylist.title}`,
+            url: `/song?playlist=${store.getState().playlist.currentPlaylist
+                .title}`,
             responseType: 'json',
         })
             .map(response => response.response)
-            .map(({ songUrl, time }) => doUpdateLivePlaylist(songUrl, time))
+            .map(({ songUrl, time, hasPlayed }) =>
+                doUpdateLivePlaylist(songUrl, time, hasPlayed)
+            )
             .catch(err => of$(err).map(doSetPlaylistError))
     );
 
@@ -409,10 +424,25 @@ export const pausePlaylistEpic = action$ =>
 export const getNextSongEpic = (action$, store) =>
     action$.ofType(GET_NEXT_SONG).switchMap(() =>
         ajax({
-            url: `/song/next?playlist=${store.getState().playlist.currentPlaylist.title}`,
+            url: `/song?playlist=${store.getState().playlist.currentPlaylist
+                .title}`,
             responseType: 'json',
         })
             .map(response => response.response)
-            .map(({ songUrl, time }) => doUpdateLivePlaylist(songUrl, time))
+            .map(({ songUrl, time, hasPlayed }) =>
+                doUpdateLivePlaylist(songUrl, time, hasPlayed)
+            )
+            .catch(err => of$(err).map(doSetPlaylistError))
+    );
+
+export const refreshPlaylistEpic = (action$, store) =>
+    action$.ofType(REFRESH_PLAYLIST).switchMap(() =>
+        ajax({
+            url: `/playlist/refresh?title=${store.getState().playlist
+                .currentPlaylist.title}`,
+            responseType: 'json',
+        })
+            .map(() => doGoLiveOnCurrentPlaylist())
+            .catch(err => console.log(err))
             .catch(err => of$(err).map(doSetPlaylistError))
     );

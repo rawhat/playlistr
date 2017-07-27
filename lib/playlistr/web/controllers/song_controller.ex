@@ -20,14 +20,17 @@ defmodule Playlistr.Web.SongController do
 
                     {:ok, results} ->
                         %{:song => songData, :startDate => startDate} = results |> Playlistr.Music.get_current_song_and_playtime
+                        playedUpdate = if songData.time == -1, do: "SET p.hasPlayed = true", else: ""
                         case Bolt.query(Bolt.conn, """
                             MATCH (p:Playlist)
                             WHERE p.title = '#{title}'
                             SET p.startDate = #{startDate}
+                            #{playedUpdate}
                             RETURN p AS playlist
                         """) do
                             _ ->
-                                json conn, songData
+                                IO.puts playedUpdate
+                                json conn, (Map.merge songData, %{ hasPlayed: (if playedUpdate == "", do: false, else: true)})
                         end
 
                     {:err, _} ->

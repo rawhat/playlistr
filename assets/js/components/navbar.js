@@ -28,7 +28,8 @@ class NavBar extends Component {
                               >
                                   {/*<li role="presentation">*/}
                                   <LinkContainer
-                                      to={`/profile/${this.props.user.username}`}
+                                      to={`/profile/${this.props.user
+                                          .username}`}
                                       role="menuitem"
                                   >
                                       <MenuItem>Profile</MenuItem>

@@ -13,6 +13,12 @@ defmodule Playlistr.Web.Router do
     plug :accepts, ["json"]
   end
 
+  scope "/authenticated", Playlistr.Web do
+    pipe_through :api
+
+    get "/", AuthController, :auth_test
+  end
+
   scope "/login", Playlistr.Web do
     pipe_through :api
 
@@ -43,6 +49,7 @@ defmodule Playlistr.Web.Router do
 
     get "/", PlaylistController, :index
     put "/", PlaylistController, :add_playlist
+    get "/refresh", PlaylistController, :refresh
   end
 
   scope "/", Playlistr.Web do

@@ -11,7 +11,10 @@ import VideoPlayer from './video-player';
 import PlaylistSidebar from './playlist-sidebar';
 import SongArea from './song-area';
 
-import { doGoLiveOnCurrentPlaylist } from '../ducks/playlist';
+import {
+    doGoLiveOnCurrentPlaylist,
+    doRefreshPlaylist,
+} from '../ducks/playlist';
 import {
     doSocketConnect,
     doSocketDisconnect,
@@ -29,6 +32,7 @@ class MainPage extends Component {
         currentPlaylist: PropTypes.object,
         goLive: PropTypes.func,
         currentSong: PropTypes.string,
+        refresh: PropTypes.func,
     };
 
     componentDidMount = () => {
@@ -71,6 +75,25 @@ class MainPage extends Component {
             );
         }
 
+        let refresh = null;
+        if (
+            this.props.currentPlaylist &&
+            this.props.currentPlaylist.hasPlayed
+        ) {
+            refresh = (
+                <div className="container-fluid">
+                    <div className="row">Playlist has played, replay it?</div>
+                    <div className="row">
+                        <span
+                            className="glyphicon glyphicon-refresh"
+                            style={{ cursor: 'pointer' }}
+                            onClick={() => this.props.refresh()}
+                        />
+                    </div>
+                </div>
+            );
+        }
+
         let audioBar = null;
         let contentSection = null;
 
@@ -92,11 +115,12 @@ class MainPage extends Component {
             );
         }
 
-        let addSongArea = _.isEqual({}, this.props.currentPlaylist) ||
+        let addSongArea =
+            _.isEqual({}, this.props.currentPlaylist) ||
             !this.props.currentPlaylist ||
             this.props.currentPlaylist.title === undefined
-            ? null
-            : <AddSongArea addSongCallback={this.addSongCallback} />;
+                ? null
+                : <AddSongArea addSongCallback={this.addSongCallback} />;
 
         return (
             <div style={{ marginTop: 60 }}>
@@ -126,6 +150,9 @@ class MainPage extends Component {
                                     <div className="pull-left">
                                         {goLiveLink}
                                     </div>
+                                    <div style={{ textAlign: 'center' }}>
+                                        {refresh}
+                                    </div>
                                     <div className="pull-right">
                                         {exportPlaylistLink}
                                     </div>
@@ -149,6 +176,7 @@ const mapStateToProps = state => {
 const mapDispatchToProps = dispatch => {
     return {
         goLive: () => dispatch(doGoLiveOnCurrentPlaylist()),
+        refresh: () => dispatch(doRefreshPlaylist()),
         socketConnect: () => dispatch(doSocketConnect()),
         socketDisconnect: () => dispatch(doSocketDisconnect()),
         socketChange: (newPlaylist, oldPlaylist) =>
