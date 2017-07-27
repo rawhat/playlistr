@@ -14,9 +14,9 @@ type alias PlaylistHolder =
 
 
 type alias Playlist =
-    { title : String
+    { type_ : String
+    , title : String
     , password : String
-    , type_ : String
     , openSubmissions : Bool
     , length : Int
     , isPaused : Bool

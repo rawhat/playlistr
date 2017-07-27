@@ -51,9 +51,9 @@ playlistFetchDecoder =
 playlistDecoder : Decode.Decoder Playlist
 playlistDecoder =
     decode Playlist
+        |> required "type" Decode.string
         |> required "title" Decode.string
         |> required "password" Decode.string
-        |> required "type" Decode.string
         |> required "openSubmissions" Decode.bool
         |> required "length" Decode.int
         |> required "isPaused" Decode.bool
