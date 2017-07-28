@@ -25,11 +25,7 @@ defmodule Playlistr.Web.AuthController do
                             conn
                             |> put_status(:unauthorized)
                             |> json(%{ :error => "Unauthorized" })
-<<<<<<< HEAD
 
-=======
-                            
->>>>>>> ddd5849c11c477867a5c3fa27286dfcee57e9fdf
                         user ->
                             conn
                             |> put_status(:ok)
@@ -37,16 +33,10 @@ defmodule Playlistr.Web.AuthController do
                     end
             end
 
-        rescue
-<<<<<<< HEAD
-            _ ->
-                conn
-=======
-            _ -> 
-                conn 
->>>>>>> ddd5849c11c477867a5c3fa27286dfcee57e9fdf
-                |> put_status(:unauthorized)
-                |> json(%{})
+        rescue _ ->
+            conn
+            |> put_status(:unauthorized)
+            |> json(%{})
         end
     end
 
@@ -83,8 +73,7 @@ defmodule Playlistr.Web.AuthController do
             |> put_status(:ok)
             |> redirect(to: "/")
 
-        rescue
-            _ ->
+        rescue _ ->
                 conn
                 |> put_status(:ok)
                 |> redirect(to: "/")
@@ -114,8 +103,4 @@ defmodule Playlistr.Web.AuthController do
                 |> json(%{:error => "Missing parameters"})
         end
     end
-<<<<<<< HEAD
 end
-=======
-end
->>>>>>> ddd5849c11c477867a5c3fa27286dfcee57e9fdf

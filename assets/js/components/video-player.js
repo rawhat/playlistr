@@ -63,7 +63,6 @@ class VideoPlayer extends Component {
     };
 
     componentWillReceiveProps(nextProps) {
-        console.log('receiving', nextProps);
         if (
             nextProps.currentTime !== this.props.currentTime &&
             this.videoPlayer.src

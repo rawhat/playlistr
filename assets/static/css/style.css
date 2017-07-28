@@ -35,6 +35,11 @@ header {
   min-height: 40px !important;
 }*/
 
+#top-section {
+  position: relative;
+  top: 21px;
+}
+
 .middle-section {
   margin-left: 20px;
 }

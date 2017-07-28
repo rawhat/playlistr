@@ -6,7 +6,7 @@ import { Navbar, Nav, MenuItem, NavDropdown } from 'react-bootstrap';
 
 class NavBar extends Component {
     static propTypes = {
-        user: PropTypes.string,
+        user: PropTypes.object,
     };
 
     render = () => {

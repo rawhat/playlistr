@@ -10,8 +10,8 @@ defmodule Playlistr.User do
         case Bolt.query(Bolt.conn, query) do
             {:ok, results} ->
                 ((hd results)
-                |> Map.get "user").properties
-                |> Map.delete "password"
+                |> Map.get("user")).properties
+                |> Map.delete("password")
             _ ->
                 nil
         end
@@ -27,8 +27,8 @@ defmodule Playlistr.User do
 
         case Bolt.query(Bolt.conn, query) do
             {:ok, results} ->
-                {:ok, ((hd results) |> Map.get "user").properties
-                    |> Map.delete "password"
+                {:ok, ((hd results) |> Map.get("user")).properties
+                    |> Map.delete("password")
                 }
             _ ->
                 {:error, nil}

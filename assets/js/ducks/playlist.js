@@ -1,6 +1,7 @@
 import { ajax } from 'rxjs/observable/dom/ajax';
 import { of as of$ } from 'rxjs/observable/of';
 import _get from 'lodash/get';
+import _orderBy from 'lodash/orderBy';
 
 import { doHidePasswordModal } from '../ducks/protected-playlist';
 
@@ -149,6 +150,8 @@ export default function playlistReducer(state = initialState, action) {
         }
 
         case SET_CURRENT_PLAYLIST: {
+            let currentPlaylist = payload;
+            currentPlaylist.songs = _orderBy(currentPlaylist.songs, 'index', 'asc');
             return {
                 ...state,
                 currentPlaylist: payload,
