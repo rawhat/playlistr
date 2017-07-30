@@ -46,10 +46,8 @@ class NavBar extends Component {
     };
 }
 
-const mapStateToProps = state => {
-    return {
-        user: state.auth.user,
-    };
-};
+const mapStateToProps = state => ({
+    user: state.auth.user,
+});
 
 export default connect(mapStateToProps)(NavBar);

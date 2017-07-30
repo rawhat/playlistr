@@ -106,10 +106,4 @@ const mapStateToProps = state => {
     };
 };
 
-const mapDispatchToProps = dispatch => {
-    return {
-        login: (username, password) => dispatch(doLogin(username, password)),
-    };
-};
-
-export default connect(mapStateToProps, mapDispatchToProps)(Login);
+export default connect(mapStateToProps, { login: doLogin })(Login);

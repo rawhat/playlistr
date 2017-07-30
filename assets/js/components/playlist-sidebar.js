@@ -73,18 +73,12 @@ class PlaylistSidebar extends Component {
     };
 }
 
-const mapStateToProps = state => {
-    return {
-        playlists: state.playlist.playlists,
-        currentPlaylist: state.playlist.currentPlaylist,
-    };
-};
+const mapStateToProps = state => ({
+    playlists: state.playlist.playlists,
+    currentPlaylist: state.playlist.currentPlaylist,
+});
 
-const mapDispatchToProps = dispatch => {
-    return {
-        fetchPlaylists: () => dispatch(doFetchPlaylists()),
-        fetchPlaylistByTitle: title => dispatch(doFetchPlaylistByTitle(title)),
-    };
-};
-
-export default connect(mapStateToProps, mapDispatchToProps)(PlaylistSidebar);
+export default connect(mapStateToProps, {
+    fetchPlaylists: doFetchPlaylists,
+    fetchPlaylistByTitle: doFetchPlaylistByTitle,
+})(PlaylistSidebar);

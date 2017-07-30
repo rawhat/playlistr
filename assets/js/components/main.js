@@ -10,6 +10,7 @@ import CustomAudioBar from './custom-audio-bar';
 import VideoPlayer from './video-player';
 import PlaylistSidebar from './playlist-sidebar';
 import SongArea from './song-area';
+import PlaylistChat from './playlist-chat';
 
 import {
     doGoLiveOnCurrentPlaylist,
@@ -102,7 +103,12 @@ class MainPage extends Component {
             this.props.currentPlaylist.type === 'music'
         ) {
             audioBar = <CustomAudioBar />;
-            contentSection = <SongArea />;
+            contentSection = (
+                <div>
+                    <PlaylistChat />
+                    <SongArea />
+                </div>
+            );
         } else if (
             this.props.currentPlaylist &&
             this.props.currentPlaylist.type === 'video'
@@ -110,6 +116,7 @@ class MainPage extends Component {
             contentSection = (
                 <div className="video-area">
                     <VideoPlayer />
+                    <PlaylistChat />
                     <SongArea />
                 </div>
             );
@@ -173,16 +180,13 @@ const mapStateToProps = state => {
     };
 };
 
-const mapDispatchToProps = dispatch => {
-    return {
-        goLive: () => dispatch(doGoLiveOnCurrentPlaylist()),
-        refresh: () => dispatch(doRefreshPlaylist()),
-        socketConnect: () => dispatch(doSocketConnect()),
-        socketDisconnect: () => dispatch(doSocketDisconnect()),
-        socketChange: (newPlaylist, oldPlaylist) =>
-            dispatch(doSocketChangePlaylist(newPlaylist, oldPlaylist)),
-        signOut: () => dispatch(doSignOut()),
-    };
+const dispatchObject = {
+    goLive: doGoLiveOnCurrentPlaylist,
+    refresh: doRefreshPlaylist,
+    socketConnect: doSocketConnect,
+    socketDisconnect: doSocketDisconnect,
+    socketChange: doSocketChangePlaylist,
+    signOut: doSignOut,
 };
 
-export default connect(mapStateToProps, mapDispatchToProps)(MainPage);
+export default connect(mapStateToProps, dispatchObject)(MainPage);

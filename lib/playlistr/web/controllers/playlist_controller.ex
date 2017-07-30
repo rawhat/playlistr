@@ -47,8 +47,7 @@ defmodule Playlistr.Web.PlaylistController do
                     OPTIONAL MATCH (p)-[:HAS]-(s:Song)
                     RETURN p AS playlist, s AS song
                 """
-                # json conn, %{ :test => "data" }
-                # json conn, %{ :playlists => Playlistr.Music.get_playlists()}
+
                 case Bolt.query(Bolt.conn, cypher) do
                     {:ok, results} ->
                         json conn, %{:playlists => (results |> Playlistr.Music.get_playlists)}
@@ -61,7 +60,7 @@ defmodule Playlistr.Web.PlaylistController do
     def add_playlist(conn, params) do
         case params do
             %{
-                "title" => title,
+                "playlist" => title,
                 "category" => category,
                 "password" => password,
                 "openSubmissions" => open_submissions,
@@ -93,11 +92,12 @@ defmodule Playlistr.Web.PlaylistController do
 
                     {:ok, result} ->
                         # Playlistr.Web.Endpoint.broadcast(topic, event, msg)
-                        addedPlaylist = result[0]["playlist"].properties
+                        addedPlaylist = (hd result)["playlist"].properties
                         addedPlaylist = addedPlaylist
                             |> Map.put_new("hasPassword", (if addedPlaylist["password"] == "", do: false, else: true))
                             |> Map.delete("password")
 
+                        IO.puts "broadcasting new playlist"
                         Playlistr.Web.Endpoint.broadcast("playlist:lobby", "new-playlist", addedPlaylist)
 
                         conn

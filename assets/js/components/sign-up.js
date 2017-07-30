@@ -6,8 +6,8 @@ import { doSignup } from '../ducks/authentication';
 class SignUp extends Component {
     static propTypes = {
         signup: PropTypes.func,
-        error: PropTypes.string
-    }
+        error: PropTypes.string,
+    };
 
     signUp = () => {
         let username = this.username.value;
@@ -40,7 +40,7 @@ class SignUp extends Component {
                                 <input
                                     className="form-control"
                                     type="text"
-                                    ref={username => this.username = username}
+                                    ref={username => (this.username = username)}
                                 />
                             </label>
                         </div>
@@ -50,7 +50,7 @@ class SignUp extends Component {
                                 <input
                                     className="form-control"
                                     type="text"
-                                    ref={email => this.email = email}
+                                    ref={email => (this.email = email)}
                                 />
                             </label>
                         </div>
@@ -60,7 +60,7 @@ class SignUp extends Component {
                                 <input
                                     className="form-control"
                                     type="password"
-                                    ref={password => this.password = password}
+                                    ref={password => (this.password = password)}
                                 />
                             </label>
                         </div>
@@ -71,12 +71,14 @@ class SignUp extends Component {
                                     className="form-control"
                                     type="password"
                                     ref={password =>
-                                        this.password_repeat = password}
+                                        (this.password_repeat = password)}
                                 />
                             </label>
                         </div>
                         {this.props.error
-                            ? <p className="bg-danger">{this.props.error}</p>
+                            ? <p className="bg-danger">
+                                  {this.props.error}
+                              </p>
                             : null}
                         <div className="row">
                             <button
@@ -93,17 +95,8 @@ class SignUp extends Component {
     };
 }
 
-const mapStateToProps = state => {
-    return {
-        error: state.auth.signupAuthError,
-    };
-};
+const mapStateToProps = state => ({
+    error: state.auth.signupAuthError,
+});
 
-const mapDispatchToProps = dispatch => {
-    return {
-        signup: (username, email, password, password_repeat) =>
-            dispatch(doSignup(username, email, password, password_repeat)),
-    };
-};
-
-export default connect(mapStateToProps, mapDispatchToProps)(SignUp);
+export default connect(mapStateToProps, { signup: doSignup })(SignUp);

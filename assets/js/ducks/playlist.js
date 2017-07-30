@@ -1,11 +1,13 @@
+/* eslint-disable no-console */
 import { ajax } from 'rxjs/observable/dom/ajax';
 import { of as of$ } from 'rxjs/observable/of';
 import _get from 'lodash/get';
 import _orderBy from 'lodash/orderBy';
+import { createSelector } from 'reselect';
 
 import { doHidePasswordModal } from '../ducks/protected-playlist';
-
 import { doSocketChangePlaylist } from '../ducks/push-socket';
+import { doJoinChannel } from '../ducks/chat';
 
 const FETCH_PLAYLISTS = 'playlistr/playlist/FETCH_PLAYLISTS';
 const FETCH_PLAYLIST_BY_TITLE = 'playlistr/playlist/FETCH_PLAYLIST_BY_TITLE';
@@ -151,7 +153,11 @@ export default function playlistReducer(state = initialState, action) {
 
         case SET_CURRENT_PLAYLIST: {
             let currentPlaylist = payload;
-            currentPlaylist.songs = _orderBy(currentPlaylist.songs, 'index', 'asc');
+            currentPlaylist.songs = _orderBy(
+                currentPlaylist.songs,
+                'index',
+                'asc'
+            );
             return {
                 ...state,
                 currentPlaylist: payload,
@@ -172,6 +178,19 @@ export default function playlistReducer(state = initialState, action) {
     }
 }
 
+const getCurrentSongs = state =>
+    _get(state, 'playlist.currentPlaylist.songs', []);
+
+export const getSongObject = createSelector(
+    [getCurrentSongs, state => state.playlist.currentSong],
+    (songs, currentSong) => songs.find(song => song.streamUrl === currentSong)
+);
+
+export const getTotalTime = createSelector(
+    getSongObject,
+    song => (song ? parseFloat(song.length) : 0)
+);
+
 export function doFetchPlaylists() {
     return {
         type: FETCH_PLAYLISTS,
@@ -181,7 +200,6 @@ export function doFetchPlaylists() {
 export function doFetchPlaylistByTitle(title) {
     return {
         type: FETCH_PLAYLIST_BY_TITLE,
-        // promise: axios.get(`/playlist?playlist=${title}`),
         payload: title,
     };
 }
@@ -351,9 +369,10 @@ export const fetchPlaylistEpic = (action$, store) =>
                 return of$(
                     doSetCurrentPlaylist(res.playlist),
                     doSocketChangePlaylist(currentTitle, playlistTitle),
+                    doJoinChannel(playlistTitle),
                     doGoLiveOnCurrentPlaylist()
                 ).catch(err => {
-                    console.log(err);
+                    console.log('fetch error', err);
                 });
             })
             .catch(err => of$(err).map(doSetPlaylistError))
@@ -375,6 +394,7 @@ export const fetchPasswordPlaylistEpic = (action$, store) =>
                         store.getState().playlist.currentPlaylist.title,
                         playlistTitle
                     ),
+                    doJoinChannel(playlistTitle),
                     doGoLiveOnCurrentPlaylist()
                 );
             })
@@ -404,9 +424,14 @@ export const createPlaylistEpic = action$ =>
             body: payload,
         })
             .map(response => response.response)
-            .flatMap(res => [
+            .flatMap(() => [
                 doClearPlaylistCreator(),
-                doFetchPasswordPlaylistByTitle(res.title, payload.password),
+                payload.password
+                    ? doFetchPasswordPlaylistByTitle(
+                          payload.playlist,
+                          payload.password
+                      )
+                    : doFetchPlaylistByTitle(payload.playlist),
             ])
             .catch(err => of$(err).map(doSetPlaylistCreateError))
     );

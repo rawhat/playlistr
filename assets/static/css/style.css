@@ -1,30 +1,29 @@
 html {
-  height: 100%;
-  font-family: 'Roboto', sans-serif;
+    height: 100%;
+    font-family: 'Roboto', sans-serif;
 }
 
 body {
-  height: 100%;
-  width: 100%;
-  position: absolute;
-  top: 0;
+    height: 100%;
+    width: 100%;
+    position: absolute;
+    top: 0;
 }
 
 audio {
-  padding-bottom: 25px;
-  width: 50%;
+    padding-bottom: 25px;
+    width: 50%;
 }
 
 header {
-  text-align: center;
-  padding-bottom: 10px;
-  border-bottom: 1px solid grey;
+    text-align: center;
+    padding-bottom: 10px;
+    border-bottom: 1px solid grey;
 }
 
 .row {
-  margin-left: 0px;
+    margin-left: 0px;
 }
-
 
 /*.navbar-nav > li > a {
   padding-top: 10px !important;
@@ -36,91 +35,120 @@ header {
 }*/
 
 #top-section {
-  position: relative;
-  top: 21px;
+    position: relative;
+    top: 21px;
 }
 
 .middle-section {
-  margin-left: 20px;
+    margin-left: 20px;
 }
 
 .middle-section {
-  display: -webkit-box;
-  display: -webkit-flex;
-  display: -ms-flexbox;
-  display: flex;
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
 }
 
-.middle-section>[class*='col-'] {
-  display: flex;
-  flex-direction: column;
+.middle-section > [class*='col-'] {
+    display: flex;
+    flex-direction: column;
 }
 
 .row.middle-section {
-  margin-right: 0px;
+    margin-right: 0px;
 }
 
 .left-panel {
-  position: fixed;
-  width: 25%;
-  margin-top: 60px;
-  margin-left: 20px;
-  padding: 20px;
+    position: fixed;
+    width: 25%;
+    margin-top: 60px;
+    margin-left: 20px;
+    padding: 20px;
 }
 
 .right-panel {
-  position: absolute;
-  left: 25%;
-  margin-top: 60px;
-  padding: 20px;
-  width: 75%;
+    position: absolute;
+    left: 25%;
+    margin-top: 60px;
+    padding: 20px;
+    width: 75%;
 }
 
 div#playlist_sidebar {
-  width: 20%;
-  float: left;
-  padding: 10px;
-  /*overflow: hidden;
+    width: 20%;
+    float: left;
+    padding: 10px;
+    /*overflow: hidden;
   position: relative;*/
-  border-right: 1px solid grey;
+    border-right: 1px solid grey;
 }
 
 div#main_panel {
-  width: 80%;
-  float: right;
-  padding: 10px;
-  position: relative;
+    width: 80%;
+    float: right;
+    padding: 10px;
+    position: relative;
 }
 
 div#playlist_sidebar {
-  bottom: 0;
+    bottom: 0;
 }
 
 div#create_playlist_button_area {
-  padding-bottom: 10px;
+    padding-bottom: 10px;
 }
 
 .playlist-list-group {
-  max-height: calc(100vh - 200px);
-  overflow-y: auto;
+    max-height: calc(100vh - 200px);
+    overflow-y: auto;
 }
 
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+    width: 10px;
+    height: 10px;
 }
 
 ::-webkit-scrollbar-button:start:decrement,
 ::-webkit-scrollbar-button:start:decrement {
-  display: none;
+    display: none;
 }
 
 ::-webkit-scrollbar-track-piece {
-  background-color: #3b3b3b;
-  -webkit-border-radius: 6px;
-  border-radius: 6px;
+    background-color: #3b3b3b;
+    -webkit-border-radius: 6px;
+    border-radius: 6px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: #ccc;
+    background-color: #ccc;
+}
+
+.playlist-chat-area {
+    background: #485563;
+    position: relative;
+    height: 300px;
+    margin: 20px;
+    padding: 10px;
+}
+
+.playlist-chat-input {
+    position: absolute;
+    bottom: 0px;
+    margin-left: -10px;
+}
+
+.playlist-chat-input > .row {
+    margin-right: 0px;
+}
+
+.playlist-chat-messages {
+    position: absolute;
+    overflow-y: auto;
+    height: calc(100% - 50px);
+    width: 100%;
+}
+
+.playlist-chat-message {
+    font-family: "Lucida Console", Monaco, monospace;
 }

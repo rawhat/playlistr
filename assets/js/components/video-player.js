@@ -27,7 +27,6 @@ class VideoPlayer extends Component {
 
     static propTypes = {
         currentSong: PropTypes.string,
-        totalTime: PropTypes.number,
         currentTime: PropTypes.number,
         playOnLoad: PropTypes.bool,
         nextSong: PropTypes.func,
@@ -36,10 +35,6 @@ class VideoPlayer extends Component {
         togglePause: PropTypes.func,
         title: PropTypes.string,
         updatePlaytime: PropTypes.func,
-    };
-
-    static defaultProps = {
-        totalTime: 0,
     };
 
     componentDidMount = () => {
@@ -214,23 +209,16 @@ class VideoPlayer extends Component {
     };
 }
 
-const mapStateToProps = state => {
-    return {
-        title: state.playlist.currentPlaylist.title,
-        currentTime: state.playlist.currentPlaytime,
-        currentSong: state.playlist.currentSong,
-        paused: state.playlist.paused,
-        username: _.get(state, 'auth.user.username', null),
-        creator: state.playlist.currentPlaylist.creator,
-        totalTime: state.playlist.totalTime,
-    };
-};
+const mapStateToProps = state => ({
+    title: state.playlist.currentPlaylist.title,
+    currentTime: state.playlist.currentPlaytime,
+    currentSong: state.playlist.currentSong,
+    paused: state.playlist.paused,
+    username: _.get(state, 'auth.user.username', null),
+    creator: state.playlist.currentPlaylist.creator,
+});
 
-const mapDispatchToProps = dispatch => {
-    return {
-        togglePause: title => dispatch(doTogglePauseStatus(title)),
-        nextSong: () => dispatch(doGetNextSong()),
-    };
-};
-
-export default connect(mapStateToProps, mapDispatchToProps)(VideoPlayer);
+export default connect(mapStateToProps, {
+    togglePause: doTogglePauseStatus,
+    nextSong: doGetNextSong,
+})(VideoPlayer);

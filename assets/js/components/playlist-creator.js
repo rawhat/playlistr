@@ -31,7 +31,11 @@ class PlaylistCreator extends Component {
     }
 
     static propTypes = {
-        // playlistSelector: PropTypes.func,
+        createPlaylist: PropTypes.func,
+        showModal: PropTypes.func,
+        creatingPlaylist: PropTypes.bool,
+        hideModal: PropTypes.func,
+        createPlaylistError: PropTypes.bool,
     };
 
     createPlaylist = ev => {
@@ -103,29 +107,14 @@ class PlaylistCreator extends Component {
     };
 }
 
-const mapStateToProps = state => {
-    return {
-        createPlaylistError: state.playlist.createPlaylistError,
-        creatingPlaylist: state.playlist.creatingPlaylist,
-        createdPlaylist: state.playlist.playlistCreated,
-    };
-};
+const mapStateToProps = state => ({
+    createPlaylistError: state.playlist.createPlaylistError,
+    creatingPlaylist: state.playlist.creatingPlaylist,
+    createdPlaylist: state.playlist.playlistCreated,
+});
 
-const mapDispatchToProps = dispatch => {
-    return {
-        createPlaylist: (playlist, category, password, openSubmissions, type) =>
-            dispatch(
-                doCreatePlaylist(
-                    playlist,
-                    category,
-                    password,
-                    openSubmissions,
-                    type
-                )
-            ),
-        showModal: () => dispatch(doShowCreatePlaylistModal()),
-        hideModal: () => dispatch(doHideCreatePlaylistModal()),
-    };
-};
-
-export default connect(mapStateToProps, mapDispatchToProps)(PlaylistCreator);
+export default connect(mapStateToProps, {
+    createPlaylist: doCreatePlaylist,
+    showModal: doShowCreatePlaylistModal,
+    hideModal: doHideCreatePlaylistModal,
+})(PlaylistCreator);
