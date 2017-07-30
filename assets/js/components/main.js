@@ -103,12 +103,7 @@ class MainPage extends Component {
             this.props.currentPlaylist.type === 'music'
         ) {
             audioBar = <CustomAudioBar />;
-            contentSection = (
-                <div>
-                    <PlaylistChat />
-                    <SongArea />
-                </div>
-            );
+            contentSection = <SongArea />;
         } else if (
             this.props.currentPlaylist &&
             this.props.currentPlaylist.type === 'video'
@@ -116,7 +111,6 @@ class MainPage extends Component {
             contentSection = (
                 <div className="video-area">
                     <VideoPlayer />
-                    <PlaylistChat />
                     <SongArea />
                 </div>
             );
@@ -129,10 +123,14 @@ class MainPage extends Component {
                 ? null
                 : <AddSongArea addSongCallback={this.addSongCallback} />;
 
+        let playlistChat = _.isEmpty(this.props.currentPlaylist)
+            ? null
+            : <PlaylistChat />;
+
         return (
             <div style={{ marginTop: 60 }}>
                 <Row className="middle-section">
-                    <Col md={2} sm={12}>
+                    <Col md={2} sm={2}>
                         <Row>
                             {addSongArea}
                         </Row>
@@ -140,7 +138,7 @@ class MainPage extends Component {
                             <PlaylistSidebar />
                         </Row>
                     </Col>
-                    <Col md={10} sm={12}>
+                    <Col md={7} sm={7}>
                         <Row>
                             {audioBar}
                         </Row>
@@ -167,6 +165,9 @@ class MainPage extends Component {
                                 {contentSection}
                             </div>
                         </Row>
+                    </Col>
+                    <Col md={3} sm={3}>
+                        {playlistChat}
                     </Col>
                 </Row>
             </div>

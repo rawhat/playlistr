@@ -127,8 +127,7 @@ div#create_playlist_button_area {
 .playlist-chat-area {
     background: #485563;
     position: relative;
-    height: 300px;
-    margin: 20px;
+    height: 75vh;
     padding: 10px;
 }
 
@@ -147,6 +146,7 @@ div#create_playlist_button_area {
     overflow-y: auto;
     height: calc(100% - 50px);
     width: 100%;
+    font-size: 14px;
 }
 
 .playlist-chat-message {

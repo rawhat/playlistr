@@ -80,7 +80,9 @@ defmodule Playlistr.Web.PlaylistController do
                         isPaused: "#{playlist.is_paused}",
                         startDate: "#{playlist.start_date}",
                         currentTime: "#{playlist.current_time}",
-                        hasPlayed: "#{playlist.has_played}"
+                        hasPlayed: "#{playlist.has_played}",
+                        playCount: 0,
+                        lastPlayedDate: null
                     }) RETURN p AS playlist
                 """
 
@@ -126,6 +128,7 @@ defmodule Playlistr.Web.PlaylistController do
                     AND p.hasPlayed = true
                     SET p.hasPlayed = false
                     SET p.startDate = null
+                    SET p.playCount = (CASE WHEN EXISTS(p.playCount) THEN p.playCount + 1 ELSE 1 END)
                     RETURN p AS playlist
                 """
 

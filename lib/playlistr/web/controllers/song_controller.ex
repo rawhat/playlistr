@@ -25,6 +25,7 @@ defmodule Playlistr.Web.SongController do
                             MATCH (p:Playlist)
                             WHERE p.title = '#{title}'
                             SET p.startDate = #{startDate}
+                            SET p.lastPlayedDate = #{startDate}
                             #{playedUpdate}
                             RETURN p AS playlist
                         """) do
