@@ -6,6 +6,7 @@ import playlistReducer from './playlist';
 import pushSocketReducer from './push-socket';
 import protectedPlaylistReducer from './protected-playlist';
 import addSongReducer from './add-song';
+import chatReducer from './chat';
 
 import { combineEpics } from 'redux-observable';
 
@@ -17,6 +18,7 @@ import {
     createPlaylistEpic,
     pausePlaylistEpic,
     getNextSongEpic,
+    refreshPlaylistEpic,
 } from './playlist';
 
 import {
@@ -41,6 +43,7 @@ export const rootEpic = combineEpics(
     addSongEpic,
     pausePlaylistEpic,
     getNextSongEpic,
+    refreshPlaylistEpic
 );
 
 export default combineReducers({
@@ -50,4 +53,5 @@ export default combineReducers({
     protectedPlaylist: protectedPlaylistReducer,
     socketStatus: pushSocketReducer,
     addSong: addSongReducer,
+    chat: chatReducer,
 });

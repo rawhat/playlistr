@@ -25,20 +25,12 @@ const withAuthentication = authStatus => WrappedComponent => {
         };
     }
 
-    const mapStateToProps = state => {
-        return {
-            user: state.auth.user,
-            authStatus: state.auth.authStatus
-        };
-    };
+    const mapStateToProps = state => ({
+        user: state.auth.user,
+        authStatus: state.auth.authStatus
+    });
 
-    const mapDispatchToProps = dispatch => {
-        return {
-            authCheck: () => dispatch(doAuthCheck())
-        };
-    };
-
-    return connect(mapStateToProps, mapDispatchToProps)(App);
+    return connect(mapStateToProps, { authCheck: doAuthCheck })(App);
 };
 
 export default withAuthentication;

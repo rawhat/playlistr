@@ -6,7 +6,7 @@ import { Navbar, Nav, MenuItem, NavDropdown } from 'react-bootstrap';
 
 class NavBar extends Component {
     static propTypes = {
-        user: PropTypes.string,
+        user: PropTypes.object,
     };
 
     render = () => {
@@ -28,7 +28,8 @@ class NavBar extends Component {
                               >
                                   {/*<li role="presentation">*/}
                                   <LinkContainer
-                                      to={`/profile/${this.props.user.username}`}
+                                      to={`/profile/${this.props.user
+                                          .username}`}
                                       role="menuitem"
                                   >
                                       <MenuItem>Profile</MenuItem>
@@ -45,10 +46,8 @@ class NavBar extends Component {
     };
 }
 
-const mapStateToProps = state => {
-    return {
-        user: state.auth.user,
-    };
-};
+const mapStateToProps = state => ({
+    user: state.auth.user,
+});
 
 export default connect(mapStateToProps)(NavBar);

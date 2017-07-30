@@ -22,47 +22,35 @@ class AddSongArea extends Component {
 
     render = () => {
         return (
-            // <div className='input-field' style={{width: '50%', margin: '10px auto'}}>
-            (
-                <FormGroup className={this.props.error ? 'has-error' : ''}>
-                    <InputGroup>
-                        <input
-                            className="form-control"
-                            ref={songUrl => this.songUrl = songUrl}
-                            type="text"
-                            placeholder="Add song to current playlist"
-                            onChange={this.onChange}
-                            value={this.props.text}
-                        />
-                        <InputGroup.Button>
-                            <button
-                                className="btn btn-default"
-                                onClick={this.addSong}
-                            >
-                                +
-                            </button>
-                        </InputGroup.Button>
-                    </InputGroup>
-                </FormGroup>
-            )
-
-            // </div>
+            <FormGroup className={this.props.error ? 'has-error' : ''}>
+                <InputGroup>
+                    <input
+                        className="form-control"
+                        ref={songUrl => (this.songUrl = songUrl)}
+                        type="text"
+                        placeholder="Add song to current playlist"
+                        onChange={this.onChange}
+                        value={this.props.text}
+                    />
+                    <InputGroup.Button>
+                        <button
+                            className="btn btn-default"
+                            onClick={this.addSong}
+                        >
+                            +
+                        </button>
+                    </InputGroup.Button>
+                </InputGroup>
+            </FormGroup>
         );
     };
 }
 
-const mapStateToProps = state => {
-    return {
-        text: state.addSong.text,
-        error: state.addSong.error,
-    };
-};
+const mapStateToProps = state => ({
+    text: state.addSong.text,
+    error: state.addSong.error,
+});
 
-const mapDispatchToProps = dispatch => {
-    return {
-        add: () => dispatch(doAddSong()),
-        set: text => dispatch(doSetText(text)),
-    };
-};
-
-export default connect(mapStateToProps, mapDispatchToProps)(AddSongArea);
+export default connect(mapStateToProps, { add: doAddSong, set: doSetText })(
+    AddSongArea
+);

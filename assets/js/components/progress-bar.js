@@ -2,6 +2,8 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 
+import { getTotalTime } from '../ducks/playlist';
+
 class ProgressBar extends Component {
     constructor(props) {
         super(props);
@@ -31,9 +33,10 @@ class ProgressBar extends Component {
             currSeconds = Math.floor(this.props.currentTime - currMinutes * 60);
         }
 
-        var currTimeString = currSeconds < 10
-            ? currMinutes + ':0' + currSeconds
-            : currMinutes + ':' + currSeconds;
+        var currTimeString =
+            currSeconds < 10
+                ? currMinutes + ':0' + currSeconds
+                : currMinutes + ':' + currSeconds;
 
         //var totalMinutes = Math.floor(this.refs.audioPlayerHidden.duration / 60);
         //var totalSeconds = Math.floor(this.refs.audioPlayerHidden.duration - totalMinutes * 60);
@@ -45,9 +48,10 @@ class ProgressBar extends Component {
             totalSeconds = Math.floor(this.props.totalTime - totalMinutes * 60);
         }
 
-        var totalTimeString = totalSeconds < 10
-            ? totalMinutes + ':0' + totalSeconds
-            : totalMinutes + ':' + totalSeconds;
+        var totalTimeString =
+            totalSeconds < 10
+                ? totalMinutes + ':0' + totalSeconds
+                : totalMinutes + ':' + totalSeconds;
 
         if (this.innerDiv !== undefined && this.props.paused)
             this.innerDiv.style.transition = 'paused';
@@ -83,17 +87,8 @@ class ProgressBar extends Component {
 }
 
 const mapStateToProps = state => {
-    let currentSongObject = state.playlist.currentPlaylist.songs.find(
-        song => song.streamUrl === state.playlist.currentSong
-    );
-
-    let totalTime = 0;
-    if (currentSongObject) {
-        totalTime = currentSongObject.length;
-    }
-
     return {
-        totalTime,
+        totalTime: getTotalTime(state),
         paused: state.playlist.paused,
     };
 };

@@ -27,18 +27,14 @@ class VideoPlayer extends Component {
 
     static propTypes = {
         currentSong: PropTypes.string,
-        totalTime: PropTypes.number,
         currentTime: PropTypes.number,
         playOnLoad: PropTypes.bool,
+        nextSong: PropTypes.func,
         nextSongGetter: PropTypes.func,
         paused: PropTypes.bool,
         togglePause: PropTypes.func,
         title: PropTypes.string,
         updatePlaytime: PropTypes.func,
-    };
-
-    static defaultProps = {
-        totalTime: 0,
     };
 
     componentDidMount = () => {
@@ -62,7 +58,6 @@ class VideoPlayer extends Component {
     };
 
     componentWillReceiveProps(nextProps) {
-        console.log('receiving', nextProps);
         if (
             nextProps.currentTime !== this.props.currentTime &&
             this.videoPlayer.src
@@ -76,25 +71,10 @@ class VideoPlayer extends Component {
     }
 
     componentDidUpdate() {
-        // if (this.props.currentVideo) {
-        //     var playStatus = this.props.playOnLoad && this.videoPlayer.paused
-        //         ? true
-        //         : false;
-        //     if (this.props.currentTime) {
-        //         this.videoPlayer.currentTime = this.props.currentTime;
-        //         this.props.timeRegistered();
-        //     }
-        //     if (playStatus) {
-        //         this.videoPlayer.play();
-        //     }
-        // } else {
-        //     this.videoPlayer.src = '';
-        //     this.videoPlayer.pause();
-        // }
         if (this.videoPlayer.src) {
-            if (this.props.paused) {
+            if (this.props.paused && !this.videoPlayer.paused) {
                 this.videoPlayer.pause();
-            } else {
+            } else if (!this.props.paused && this.videoPlayer.paused) {
                 this.videoPlayer.play();
             }
         }
@@ -122,6 +102,8 @@ class VideoPlayer extends Component {
                 document.webkitExitFullscreen();
             } else if (document.exitFullscreen) {
                 document.exitFullscreen();
+            } else if (document.mozCancelFullScreen) {
+                document.mozCancelFullScreen();
             }
             this.setState({
                 isFullscreen: false,
@@ -142,7 +124,7 @@ class VideoPlayer extends Component {
     };
 
     nextSongGetter = () => {
-        this.videoPlayer.src = '';
+        // this.videoPlayer.src = '';
         this.props.nextSong();
     };
 
@@ -165,7 +147,7 @@ class VideoPlayer extends Component {
                 type="range"
                 style={{ position: 'relative', top: 12 }}
                 onInput={this.adjustVolume}
-                ref={volumeSlider => this.volumeSlider = volumeSlider}
+                ref={volumeSlider => (this.volumeSlider = volumeSlider)}
                 min={0}
                 max={100}
                 defaultValue={25}
@@ -182,7 +164,7 @@ class VideoPlayer extends Component {
                     <video
                         controls={false}
                         onClick={this.togglePause}
-                        ref={videoPlayer => this.videoPlayer = videoPlayer}
+                        ref={videoPlayer => (this.videoPlayer = videoPlayer)}
                         src={this.props.currentSong}
                         hidden={!this.props.currentSong ? 'hidden' : ''}
                         width={'85%'}
@@ -227,23 +209,16 @@ class VideoPlayer extends Component {
     };
 }
 
-const mapStateToProps = state => {
-    return {
-        title: state.playlist.currentPlaylist.title,
-        currentTime: state.playlist.currentPlaytime,
-        currentSong: state.playlist.currentSong,
-        paused: state.playlist.paused,
-        username: _.get(state, 'auth.user.username', null),
-        creator: state.playlist.currentPlaylist.creator,
-        totalTime: state.playlist.totalTime,
-    };
-};
+const mapStateToProps = state => ({
+    title: state.playlist.currentPlaylist.title,
+    currentTime: state.playlist.currentPlaytime,
+    currentSong: state.playlist.currentSong,
+    paused: state.playlist.paused,
+    username: _.get(state, 'auth.user.username', null),
+    creator: state.playlist.currentPlaylist.creator,
+});
 
-const mapDispatchToProps = dispatch => {
-    return {
-        togglePause: title => dispatch(doTogglePauseStatus(title)),
-        nextSong: () => dispatch(doGetNextSong()),
-    };
-};
-
-export default connect(mapStateToProps, mapDispatchToProps)(VideoPlayer);
+export default connect(mapStateToProps, {
+    togglePause: doTogglePauseStatus,
+    nextSong: doGetNextSong,
+})(VideoPlayer);

@@ -1,19 +1,21 @@
-// import io from 'socket.io-client';
-// import { Socket } from 'phoenix';
+/* eslint-disable no-console */
 import { Socket } from 'phoenix';
-// const Socket = {};
 
 import {
     doSocketConnected,
     doSocketDisconnected,
-
-    // doSocketChangePlaylist,
-
-    // doSocketNewSong,
     PUSH_SOCKET_CONNECT,
     PUSH_SOCKET_DISCONNECT,
     PUSH_SOCKET_CHANGE,
 } from '../ducks/push-socket';
+
+import {
+    doReceiveChatMessage,
+    doSetChatSocket,
+    JOIN_PLAYLIST_CHAT,
+    SEND_PLAYLIST_MESSAGE,
+    // LEAVE_PLAYLIST_CHAT,
+} from '../ducks/chat';
 
 import {
     doAddNewPlaylist,
@@ -47,6 +49,10 @@ function socketMiddleware() {
         store.dispatch(doAddNewSongToCurrentPlaylist(song));
     };
 
+    const onNewChatMessage = (ws, store) => msg => {
+        store.dispatch(doReceiveChatMessage(msg));
+    };
+
     return store => next => action => {
         const { type, payload } = action;
 
@@ -57,9 +63,13 @@ function socketMiddleware() {
                 socket = new Socket('/socket');
                 socket.connect();
                 playlistsLobby = socket.channel('playlists:lobby');
-                playlistsLobby.join().receive('ok', onOpen(socket, store));
+                playlistsLobby
+                    .join()
+                    .receive('ok', () => onOpen(socket, store));
 
-                playlistsLobby.on('new-playlist', onNewPlaylist(socket, store));
+                playlistsLobby.on('new-playlist', () =>
+                    onNewPlaylist(socket, store)
+                );
                 break;
             }
 
@@ -71,7 +81,7 @@ function socketMiddleware() {
             }
 
             case PUSH_SOCKET_CHANGE: {
-                console.log(`changing to ${payload}`);
+                console.log('changing to', payload);
                 let { old_playlist, new_playlist } = payload;
 
                 if (old_playlist && playlistLobby) {
@@ -82,8 +92,43 @@ function socketMiddleware() {
                 playlistLobby.join().receive('ok', () => {
                     console.log(`connected to ${new_playlist}`);
                 });
-                playlistLobby.on('new-song', onNewSong(socket, store));
+                playlistLobby.on('new-song', () => onNewSong(socket, store));
 
+                break;
+            }
+
+            case JOIN_PLAYLIST_CHAT: {
+                console.log('joining playlist chat');
+                if (socket) {
+                    let playlistChatChannel = socket.channel(
+                        `playlist:chat:${payload}`
+                    );
+                    playlistChatChannel
+                        .join()
+                        .receive('ok', () =>
+                            store.dispatch(doSetChatSocket(playlistChatChannel))
+                        );
+
+                    playlistChatChannel.on('message', msg =>
+                        store.dispatch(doReceiveChatMessage(msg))
+                    );
+                }
+                break;
+            }
+
+            case SEND_PLAYLIST_MESSAGE: {
+                if (socket) {
+                    let playlistChatChannel = store.getState().chat
+                        .channelSocket;
+
+                    let message = {
+                        message: payload,
+                        user: store.getState().auth.user.username,
+                        time: Date.now(),
+                    };
+
+                    playlistChatChannel.push('message', message);
+                }
                 break;
             }
 

@@ -31,6 +31,14 @@ class PasswordPlaylist extends Component {
         hasPassword: PropTypes.bool,
         playlistPasswordError: PropTypes.bool,
         selectProtectedPlaylist: PropTypes.func,
+        toggleModal: PropTypes.func,
+        hide: PropTypes.func,
+        toggleVisbility: PropTypes.func,
+        select: PropTypes.func,
+        displayModal: PropTypes.bool,
+        title: PropTypes.string,
+        textHidden: PropTypes.bool,
+        error: PropTypes.bool,
     };
 
     toggleOverlay = () => {
@@ -52,18 +60,18 @@ class PasswordPlaylist extends Component {
 
     render = () => {
         var style = this.props.selected ? { backgroundColor: '#375a7f' } : {};
-        var glyphicon = this.props.type === 'music'
-            ? 'glyphicon-music'
-            : 'glyphicon-film';
+        var glyphicon =
+            this.props.type === 'music' ? 'glyphicon-music' : 'glyphicon-film';
         return (
-            <div ref={overlayTarget => this.overlayTarget = overlayTarget}>
+            <div ref={overlayTarget => (this.overlayTarget = overlayTarget)}>
                 <button
                     onClick={this.toggleOverlay}
                     style={style}
                     type="button"
                     className="list-group-item playlist-selector"
                     id={this.props.name}
-                    ref={playlistButton => this.playlistButton = playlistButton}
+                    ref={playlistButton =>
+                        (this.playlistButton = playlistButton)}
                 >
                     {this.props.name}
                     <div className="pull-right">
@@ -78,13 +86,13 @@ class PasswordPlaylist extends Component {
                     rootClose
                     show={
                         this.props.displayModal &&
-                            this.props.title === this.props.name
+                        this.props.title === this.props.name
                     }
                     onHide={this.hideOverlay}
                     placement="right"
                     containerPadding={20}
                     target={this.playlistButton}
-                    ref={overlay => this.overlay = overlay}
+                    ref={overlay => (this.overlay = overlay)}
                 >
                     <Popover
                         id="playlist-password-overlay"
@@ -93,7 +101,7 @@ class PasswordPlaylist extends Component {
                         <FormGroup
                             validationState={
                                 this.props.error &&
-                                    this.props.title === this.props.name
+                                this.props.title === this.props.name
                                     ? 'error'
                                     : null
                             }
@@ -149,14 +157,9 @@ const mapStateToProps = state => {
     };
 };
 
-const mapDispatchToProps = dispatch => {
-    return {
-        select: (title, password) =>
-            dispatch(doFetchPasswordPlaylistByTitle(title, password)),
-        toggleModal: title => dispatch(doToggleModal(title)),
-        hide: title => dispatch(doHidePasswordModal(title)),
-        toggleVisbility: () => dispatch(doToggleVisibility()),
-    };
-};
-
-export default connect(mapStateToProps, mapDispatchToProps)(PasswordPlaylist);
+export default connect(mapStateToProps, {
+    select: doFetchPasswordPlaylistByTitle,
+    toggleModal: doToggleModal,
+    hide: doHidePasswordModal,
+    toggleVisbility: doToggleVisibility,
+})(PasswordPlaylist);

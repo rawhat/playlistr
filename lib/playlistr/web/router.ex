@@ -49,6 +49,7 @@ defmodule Playlistr.Web.Router do
 
     get "/", PlaylistController, :index
     put "/", PlaylistController, :add_playlist
+    get "/refresh", PlaylistController, :refresh
   end
 
   scope "/", Playlistr.Web do

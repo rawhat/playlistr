@@ -28,6 +28,7 @@ class CustomAudioBar extends Component {
         togglePause: PropTypes.func,
         title: PropTypes.string,
         updatePlaytime: PropTypes.func,
+        nextSong: PropTypes.func,
     };
 
     static defaultProps = {
@@ -103,9 +104,10 @@ class CustomAudioBar extends Component {
             var currSeconds = Math.floor(
                 this.state.currTime - currMinutes * 60
             );
-            var currTimeString = currSeconds < 10
-                ? currMinutes + ':0' + currSeconds
-                : currMinutes + ':' + currSeconds;
+            var currTimeString =
+                currSeconds < 10
+                    ? currMinutes + ':0' + currSeconds
+                    : currMinutes + ':' + currSeconds;
 
             //var totalMinutes = Math.floor(this.refs.audioPlayerHidden.duration / 60);
             //var totalSeconds = Math.floor(this.refs.audioPlayerHidden.duration - totalMinutes * 60);
@@ -113,13 +115,14 @@ class CustomAudioBar extends Component {
             var totalSeconds = Math.floor(
                 this.props.totalTime - totalMinutes * 60
             );
-            var totalTimeString = totalSeconds < 10
-                ? totalMinutes + ':0' + totalSeconds
-                : totalMinutes + ':' + totalSeconds;
+            var totalTimeString =
+                totalSeconds < 10
+                    ? totalMinutes + ':0' + totalSeconds
+                    : totalMinutes + ':' + totalSeconds;
 
             var playbackBar = (
                 <div
-                    ref={outerDiv => this.outerDiv = outerDiv}
+                    ref={outerDiv => (this.outerDiv = outerDiv)}
                     style={{
                         backgroundColor: 'lightgray',
                         borderRadius: '3px',
@@ -128,7 +131,7 @@ class CustomAudioBar extends Component {
                     }}
                 >
                     <div
-                        ref={innerDiv => this.innerDiv = innerDiv}
+                        ref={innerDiv => (this.innerDiv = innerDiv)}
                         style={{
                             backgroundColor: '#375a7f',
                             borderRadius: '3px',
@@ -153,7 +156,7 @@ class CustomAudioBar extends Component {
                     type="range"
                     style={{ position: 'relative', top: '12px' }}
                     onInput={this.adjustVolume}
-                    ref={volumeSlider => this.volumeSlider = volumeSlider}
+                    ref={volumeSlider => (this.volumeSlider = volumeSlider)}
                     min={0}
                     max={100}
                     defaultValue={25}
@@ -166,11 +169,17 @@ class CustomAudioBar extends Component {
 
         return (
             <div>
-                <Col md={1} mdOffset={1}>{button}</Col>
-                <Col md={7}>{playbackBar}</Col>
-                <Col md={2}>{volumeControl}</Col>
+                <Col md={1} mdOffset={1}>
+                    {button}
+                </Col>
+                <Col md={7}>
+                    {playbackBar}
+                </Col>
+                <Col md={2}>
+                    {volumeControl}
+                </Col>
                 <audio
-                    ref={audioPlayer => this.audioPlayer = audioPlayer}
+                    ref={audioPlayer => (this.audioPlayer = audioPlayer)}
                     hidden
                     src={this.props.currentSong}
                 />
@@ -179,24 +188,18 @@ class CustomAudioBar extends Component {
     };
 }
 
-const mapStateToProps = state => {
-    return {
-        title: state.playlist.currentPlaylist.title,
-        currentTime: state.playlist.currentPlaytime,
-        currentSong: state.playlist.currentSong,
-        paused: state.playlist.isPaused,
-        username: state.auth.user.username,
-        creator: state.playlist.currentPlaylist.creator,
-        totalTime: state.playlist.totalTime,
-    };
-};
+const mapStateToProps = state => ({
+    title: state.playlist.currentPlaylist.title,
+    currentTime: state.playlist.currentPlaytime,
+    currentSong: state.playlist.currentSong,
+    paused: state.playlist.isPaused,
+    username: state.auth.user.username,
+    creator: state.playlist.currentPlaylist.creator,
+    totalTime: state.playlist.totalTime,
+});
 
-const mapDispatchToProps = dispatch => {
-    return {
-        togglePause: title => dispatch(doTogglePauseStatus(title)),
-        nextSong: () => dispatch(doGetNextSong()),
-        updatePlaytime: time => dispatch(doUpdatePlaytime(time)),
-    };
-};
-
-export default connect(mapStateToProps, mapDispatchToProps)(CustomAudioBar);
+export default connect(mapStateToProps, {
+    togglePause: doTogglePauseStatus,
+    nextSong: doGetNextSong,
+    updatePlaytime: doUpdatePlaytime,
+})(CustomAudioBar);
