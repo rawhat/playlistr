@@ -28,9 +28,13 @@ module.exports = {
                     ],
                 },
             },
+            {
+                test: /\.tsx?$/,
+                loader: 'awesome-typescript-loader',
+            },
         ],
     },
-/*    plugins: [
+    /*    plugins: [
         new CopyWebpackPlugin([
             {
                 from: './static',
