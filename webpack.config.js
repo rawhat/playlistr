@@ -3,7 +3,7 @@ const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = {
     entry: {
-        main: './js/index.js',
+        main: './ui/index.js',
     },
     output: {
         path: path.resolve(__dirname, '/static'),
@@ -30,14 +30,14 @@ module.exports = {
             },
         ],
     },
-    plugins: [
+/*    plugins: [
         new CopyWebpackPlugin([
             {
                 from: './static',
                 to: path.resolve(__dirname, '../static'),
             },
         ]),
-    ],
+    ],*/
     devServer: {
         headers: {
             'Access-Control-Allow-Origin': '*',
