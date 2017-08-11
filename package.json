@@ -25,6 +25,13 @@
         "eslint-config-es2015-react": "^0.2.1",
         "eslint-plugin-react": "^7.2.0",
         "history": "^4.6.3",
+        "koa": "^2.3.0",
+        "koa-better-body": "^3.0.4",
+        "koa-better-router": "^2.1.1",
+        "koa-graphql": "^0.7.1",
+        "koa-pug": "^3.0.0-2",
+        "koa-session": "^5.5.0",
+        "koa-static": "^4.0.1",
         "lodash": "^4.17.4",
         "neo4j-driver": "^1.4.0",
         "prop-types": "^15.5.10",
@@ -47,5 +54,8 @@
         "typescript": "^2.4.2",
         "webpack": "^3.5.3",
         "webpack-dev-server": "^2.7.1"
+    },
+    "devDependencies": {
+        "nodemon": "^1.11.0"
     }
 }
