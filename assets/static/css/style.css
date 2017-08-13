@@ -39,9 +39,13 @@ header {
     top: 21px;
 }
 
-.middle-section {
-    margin-left: 20px;
+.playlist-chat-column {
+    padding-left: 0px;
 }
+
+/*.middle-section {
+    margin-left: 20px;
+}*/
 
 .middle-section {
     display: -webkit-box;
@@ -151,4 +155,16 @@ div#create_playlist_button_area {
 
 .playlist-chat-message {
     font-family: "Lucida Console", Monaco, monospace;
+}
+
+.toggle {
+    position: absolute;
+}
+
+.toggle.chat-toggle {
+    right: 15px;
+}
+
+.toggle.sidebar-toggle {
+    left: 15px;
 }

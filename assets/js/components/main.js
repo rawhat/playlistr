@@ -22,6 +22,7 @@ import {
     doSocketChangePlaylist,
 } from '../ducks/push-socket';
 import { doSignOut } from '../ducks/authentication';
+import { doToggleSidebar, doToggleChat } from '../ducks/layout';
 
 class MainPage extends Component {
     static propTypes = {
@@ -34,6 +35,10 @@ class MainPage extends Component {
         goLive: PropTypes.func,
         currentSong: PropTypes.string,
         refresh: PropTypes.func,
+        chatHidden: PropTypes.bool,
+        sidebarHidden: PropTypes.bool,
+        toggleSidebar: PropTypes.func,
+        toggleChat: PropTypes.func
     };
 
     componentDidMount = () => {
@@ -59,9 +64,7 @@ class MainPage extends Component {
             );
             var songList = _.map(
                 _.map(this.props.currentPlaylist.songs, 'url'),
-                song => {
-                    return song.split('?v=')[1];
-                }
+                song => song.split('?v=')[1]
             ).join(',');
             exportPlaylistLink = (
                 <a
@@ -127,18 +130,52 @@ class MainPage extends Component {
             ? null
             : <PlaylistChat />;
 
+        let mainPanelWidth = 7;
+        if(this.props.sidebarHidden && this.props.chatHidden)
+            mainPanelWidth = 12;
+        else if(this.props.sidebarHidden) {
+            mainPanelWidth = 9;
+        }
+        else if(this.props.chatHidden) {
+            mainPanelWidth = 10;
+        }
+
         return (
             <div style={{ marginTop: 60 }}>
                 <Row className="middle-section">
-                    <Col md={2} sm={2}>
-                        <Row>
-                            {addSongArea}
-                        </Row>
-                        <Row>
-                            <PlaylistSidebar />
-                        </Row>
-                    </Col>
-                    <Col md={7} sm={7}>
+                    {this.props.sidebarHidden ? null :
+                        <Col md={2} sm={2}>
+                            <Row>
+                                {addSongArea}
+                            </Row>
+                            <Row>
+                                <PlaylistSidebar />
+                            </Row>
+                        </Col>
+                    }
+                    <Col md={mainPanelWidth} sm={mainPanelWidth}>
+                        <div
+                            className='toggle sidebar-toggle'
+                            onClick={this.props.toggleSidebar}>
+                            <span
+                                style={{ cursor: 'pointer' }}
+                                className={`glyphicon glyphicon-${
+                                    this.props.sidebarHidden ? 'chevron-right'
+                                    : 'chevron-left'}`}>
+                            </span>
+                        </div>
+                        {!_.isEmpty(this.props.currentPlaylist) ?
+                            <div
+                                className='toggle chat-toggle'
+                                onClick={this.props.toggleChat}>
+                                <span
+                                    style={{ cursor: 'pointer' }}
+                                    className={`glyphicon glyphicon-${
+                                        this.props.chatHidden ? 'chevron-left'
+                                        : 'chevron-right'}`}>
+                                </span>
+                            </div>
+                        : null}
                         <Row>
                             {audioBar}
                         </Row>
@@ -166,20 +203,22 @@ class MainPage extends Component {
                             </div>
                         </Row>
                     </Col>
-                    <Col md={3} sm={3}>
-                        {playlistChat}
-                    </Col>
+                    {this.props.chatHidden ? null :
+                        <Col md={3} sm={3} className='playlist-chat-column'>
+                            {playlistChat}
+                        </Col>
+                    }
                 </Row>
             </div>
         );
     };
 }
 
-const mapStateToProps = state => {
-    return {
-        currentPlaylist: state.playlist.currentPlaylist,
-    };
-};
+const mapStateToProps = state => ({
+    currentPlaylist: state.playlist.currentPlaylist,
+    sidebarHidden: state.layout.sidebarHidden,
+    chatHidden: state.layout.chatHidden
+});
 
 const dispatchObject = {
     goLive: doGoLiveOnCurrentPlaylist,
@@ -188,6 +227,8 @@ const dispatchObject = {
     socketDisconnect: doSocketDisconnect,
     socketChange: doSocketChangePlaylist,
     signOut: doSignOut,
+    toggleSidebar: doToggleSidebar,
+    toggleChat: doToggleChat
 };
 
 export default connect(mapStateToProps, dispatchObject)(MainPage);

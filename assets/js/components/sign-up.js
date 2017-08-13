@@ -6,10 +6,12 @@ import { doSignup } from '../ducks/authentication';
 class SignUp extends Component {
     static propTypes = {
         signup: PropTypes.func,
-        error: PropTypes.string,
+        error: PropTypes.bool,
     };
 
-    signUp = () => {
+    signUp = (e) => {
+        if(e) e.preventDefault();
+        
         let username = this.username.value;
         let email = this.email.value;
         let password = this.password.value;
@@ -33,7 +35,7 @@ class SignUp extends Component {
                     style={{ width: '100%', textAlign: 'center' }}
                 >
                     <h2>Sign Up</h2>
-                    <div>
+                    <form onSubmit={this.signUp}>
                         <div className="row">
                             <label style={{ width: '50%' }}>
                                 Username
@@ -77,7 +79,7 @@ class SignUp extends Component {
                         </div>
                         {this.props.error
                             ? <p className="bg-danger">
-                                  {this.props.error}
+                                  Error signing up.
                               </p>
                             : null}
                         <div className="row">
@@ -88,7 +90,7 @@ class SignUp extends Component {
                                 Sign Up
                             </button>
                         </div>
-                    </div>
+                    </form>
                 </div>
             </div>
         );

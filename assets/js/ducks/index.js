@@ -7,6 +7,7 @@ import pushSocketReducer from './push-socket';
 import protectedPlaylistReducer from './protected-playlist';
 import addSongReducer from './add-song';
 import chatReducer from './chat';
+import layoutReducer from './layout';
 
 import { combineEpics } from 'redux-observable';
 
@@ -54,4 +55,5 @@ export default combineReducers({
     socketStatus: pushSocketReducer,
     addSong: addSongReducer,
     chat: chatReducer,
+    layout: layoutReducer
 });

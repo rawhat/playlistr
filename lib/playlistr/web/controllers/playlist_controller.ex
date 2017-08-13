@@ -74,13 +74,13 @@ defmodule Playlistr.Web.PlaylistController do
                         title: "#{playlist.title}",
                         category: "#{playlist.category}",
                         password: "#{playlist.password}",
-                        openSubmissions: "#{playlist.open_submissions}",
+                        openSubmissions: #{playlist.open_submissions},
                         type: "#{playlist.type}",
                         length: "#{playlist.length}",
-                        isPaused: "#{playlist.is_paused}",
+                        isPaused: #{playlist.is_paused},
                         startDate: "#{playlist.start_date}",
-                        currentTime: "#{playlist.current_time}",
-                        hasPlayed: "#{playlist.has_played}"
+                        currentTime: #{playlist.current_time},
+                        hasPlayed: #{playlist.has_played}
                     }) RETURN p AS playlist
                 """
 

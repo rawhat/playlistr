@@ -8,19 +8,19 @@ export const SEND_PLAYLIST_MESSAGE = 'playlistr/chat/SEND_PLAYLIST_MESSAGE';
 export const RECEIVE_PLAYLIST_MESSAGE =
     'playlistr/chat/RECEIVE_PLAYLIST_MESSAGE';
 
-const sampleMessages = [
-    { message: 'this is a test', user: 'rawhat', date: Date.now() },
-    { message: 'this is a test 1', user: 'rawhat', date: Date.now() - 1000 },
-    { message: 'this is a test 2', user: 'rawhat1', date: Date.now() - 2000 },
-    { message: 'this is a test 3', user: 'rawhat', date: Date.now() - 10000 },
-    { message: 'this is a test 4', user: 'rawhat1', date: Date.now() - 15000 },
-    { message: 'this is a test 5', user: 'rawhat', date: Date.now() - 50000 },
-];
+// const sampleMessages = [
+//     { message: 'this is a test', user: 'rawhat', date: Date.now() },
+//     { message: 'this is a test 1', user: 'rawhat', date: Date.now() - 1000 },
+//     { message: 'this is a test 2', user: 'rawhat1', date: Date.now() - 2000 },
+//     { message: 'this is a test 3', user: 'rawhat', date: Date.now() - 10000 },
+//     { message: 'this is a test 4', user: 'rawhat1', date: Date.now() - 15000 },
+//     { message: 'this is a test 5', user: 'rawhat', date: Date.now() - 50000 },
+// ];
 
 const initialState = {
     channelSocket: null,
     hasError: false,
-    messages: sampleMessages,
+    messages: [],
 };
 
 export default function chatReducer(state = initialState, action) {

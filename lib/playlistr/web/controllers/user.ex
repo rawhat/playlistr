@@ -36,6 +36,26 @@ defmodule Playlistr.User do
     end
 
     def create_user(username, email, password, password_repeat) do
-        nil
+        if password != password_repeat do
+            # really shouldn't need this, but just to be safe
+            {:error, "Passwords do not match"}
+        else
+            query = """
+                CREATE (u:User {
+                    username: '#{username}',
+                    email: '#{email}',
+                    password: '#{password}',
+                    createdAt: #{Playlistr.Music.get_current_epoch_time()}
+                }) RETURN u AS user
+            """
+
+            case Bolt.query(Bolt.conn, query) do
+                {:ok, results} ->
+                    {:ok, ((hd results) |> Map.get("user")).properties
+                        |> Map.delete("password")}
+                {:err, _} ->
+                    {:error, "Could not create user"}
+            end
+        end
     end
 end

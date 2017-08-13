@@ -43,4 +43,7 @@ module.exports = {
             'Access-Control-Allow-Origin': '*',
         },
     },
+    resolve: {
+        modules: [ "node_modules", __dirname + "/web/static/js", __dirname + "/deps" ]
+    }
 };
