@@ -14,7 +14,13 @@ module.exports = {
         loaders: [
             {
                 exclude: /node_modules/,
+                loader: 'awesome-typescript-loader',
+                test: /\.tsx?$/
+            },
+            {
+                exclude: /node_modules/,
                 loader: 'babel-loader',
+                test: /\.jsx?$/,
                 query: {
                     presets: [
                         [
@@ -28,6 +34,11 @@ module.exports = {
                     ],
                 },
             },
+            {
+                enforce: 'pre',
+                test: /\.js$/,
+                loader: 'source-map-loader'
+            }
         ],
     },
     plugins: [

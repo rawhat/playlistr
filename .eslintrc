@@ -13,15 +13,17 @@
         "ecmaVersion": 7,
         "sourceType": "module",
         "ecmaFeatures": {
+            "classes": true,
             "jsx": true
         }
     },
     "plugins": [
+    "babel",
         "react"
     ],
     "extends": ["eslint:recommended", "plugin:react/recommended"],
     "rules": {
-        "semi": 2
+        "semi": 2,
     },
     "settings": {
         "react": {
