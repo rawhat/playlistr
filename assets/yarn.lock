@@ -4286,7 +4286,7 @@ redux-first-router-link@^1.1.4:
     prop-types "15.5.10"
     rudy-match-path "^0.1.0"
 
-redux-first-router@^1.9.15:
+redux-first-router@^1.9.18:
   version "1.9.18"
   resolved "https://registry.yarnpkg.com/redux-first-router/-/redux-first-router-1.9.18.tgz#13dd4f893df9166a9985b38a7cbc18319a673485"
   dependencies:

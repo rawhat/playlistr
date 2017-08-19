@@ -153,7 +153,7 @@ class MainPage extends Component {
                             </Row>
                         </Col>
                     }
-                    <Col md={mainPanelWidth} sm={mainPanelWidth}>i
+                    <Col md={mainPanelWidth} sm={mainPanelWidth}>
                         <div
                             className='toggle sidebar-toggle'
                             onClick={this.props.toggleSidebar}>
