@@ -4278,9 +4278,9 @@ redent@^1.0.0:
     indent-string "^2.1.0"
     strip-indent "^1.0.1"
 
-redux-first-router-link@^1.1.4:
-  version "1.1.4"
-  resolved "https://registry.yarnpkg.com/redux-first-router-link/-/redux-first-router-link-1.1.4.tgz#73b9430dfbd7ad52c7126f8b9391c5e06f7f33c6"
+redux-first-router-link@^1.2.0:
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/redux-first-router-link/-/redux-first-router-link-1.2.0.tgz#b6cbc388d9806ab70192303d664240b6cbdf8aa0"
   dependencies:
     path-to-regexp "^1.7.0"
     prop-types "15.5.10"
