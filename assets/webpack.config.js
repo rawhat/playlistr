@@ -8,7 +8,7 @@ module.exports = {
     output: {
         path: path.resolve(__dirname, '/static'),
         filename: 'js/[name].js',
-        publicPath: 'http://localhost:8080/',
+        publicPath: 'http://192.168.125.104:8080/',
     },
     module: {
         loaders: [
