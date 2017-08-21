@@ -3,6 +3,7 @@ import { of as of$ } from 'rxjs/observable/of';
 
 const LOGIN_USER = 'playlistr/authentication/LOGIN_USER';
 const SIGNUP_USER = 'playlistr/authentication/SIGNUP_USER';
+const AUTH_CHECK_LOADING = 'playlistr/authentication/AUTH_CHECK_LOADING';
 const CHECK_AUTH_STATUS = 'playlistr/authentication/CHECK_AUTH_STATUS';
 const SIGN_OUT = 'playlistr/authentication/SIGN_OUT';
 const SET_LOGIN_ERROR = 'playlistr/authentication/SET_LOGIN_ERROR';
@@ -20,8 +21,15 @@ const initialState = {
 
 export default function authenticationReducer(state = initialState, action) {
     const { type, payload } = action;
-
+    console.log('handling', type);
     switch (type) {
+        case AUTH_CHECK_LOADING: {
+            console.log('in here?')
+            return {
+                ...state,
+                isLoading: true
+            }
+        }
         case LOGIN_USER: {
             return {
                 ...state,
@@ -53,6 +61,7 @@ export default function authenticationReducer(state = initialState, action) {
         case SET_CURRENT_USER: {
             return {
                 ...state,
+                isLoading: false,
                 loginAuthError: null,
                 signupAuthError: null,
                 authStatus: true,
@@ -90,6 +99,13 @@ export function doSignup(username, email, password, password_repeat) {
             password,
             password_repeat,
         },
+    };
+}
+
+function doAuthLoading() {
+    console.log('this is firing?');
+    return {
+        type: AUTH_CHECK_LOADING,
     };
 }
 

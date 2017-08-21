@@ -6,7 +6,12 @@ import _ from 'lodash';
 import Playlist from './playlist';
 import PasswordPlaylist from './password-playlist';
 import PlaylistCreator from './playlist-creator';
-import { doFetchPlaylistByTitle, doFetchPlaylists } from '../ducks/playlist';
+import PlaylistFilterInput from './playlist-filter-input';
+import {
+    doFetchPlaylistByTitle,
+    doFetchPlaylists,
+    getPlaylistByCategory,
+} from '../ducks/playlist';
 
 class PlaylistSidebar extends Component {
     static propTypes = {
@@ -32,7 +37,7 @@ class PlaylistSidebar extends Component {
         if (this.props.playlists.length != 0) {
             playlists = (
                 <div className="playlist-list-group list-group">
-                    {_.map(this.props.playlists, (playlist, index) => {
+                    {this.props.playlists.map((playlist, index) => {
                         let selected =
                             playlist.title === this.props.currentPlaylist.title;
                         return playlist.hasPassword
@@ -67,6 +72,7 @@ class PlaylistSidebar extends Component {
         return (
             <div>
                 <PlaylistCreator />
+                <PlaylistFilterInput />
                 {playlists}
             </div>
         );
@@ -74,7 +80,7 @@ class PlaylistSidebar extends Component {
 }
 
 const mapStateToProps = state => ({
-    playlists: state.playlist.playlists,
+    playlists: getPlaylistByCategory(state),
     currentPlaylist: state.playlist.currentPlaylist,
 });
 

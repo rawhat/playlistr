@@ -161,16 +161,16 @@ defmodule Playlistr.Music do
 
         currentTime = get_current_epoch_time()
 
-        startDate = playlist |> Map.get("startDate", currentTime)
-        startDate = if is_integer(startDate), do: startDate, else: String.to_integer(startDate)
+        start = playlist |> Map.get("startDate", currentTime)
+        startDate = if is_integer(start), do: start, else: String.to_integer(start)
 
         time = playlist |> Map.get("currentTime", 0)
 
         currentTime = time + (currentTime - startDate) / 1000
 
-        songs = results
+        songs = if Map.get((hd results), "songs"), do: results
                 |> Enum.map(&(&1["songs"].properties))
-                |> Enum.sort_by(&(&1["index"]))
+                |> Enum.sort_by(&(&1["index"])), else: []
 
         %{:song => songs
             |> Enum.reduce_while(%{ :song => nil, :time => -1, :length => 0 }, fn song, res ->

@@ -17,6 +17,8 @@ const SHOW_CREATE_PLAYLIST_MODAL =
     'playlistr/playlist/SHOW_CREATE_PLAYLIST_MODAL';
 const HIDE_CREATE_PLAYLIST_MODAL =
     'playlistr/playlist/HIDE_CREATE_PLAYLIST_MODAL';
+const CHANGE_PLAYLIST_FILTER =
+    'playlistr/playlist/CHANGE_PLAYLIST_FILTER';
 const CREATE_PLAYLIST = 'playlistr/playlist/CREATE_PLAYLIST';
 export const GO_LIVE_ON_PLAYLIST = 'playlistr/playlist/GO_LIVE_ON_PLAYLIST';
 const ADD_NEW_PLAYLIST = 'playlistr/playlist/ADD_NEW_PLAYLIST';
@@ -35,22 +37,43 @@ const TOGGLE_PAUSE = 'playlistr/playlist/TOGGLE_PAUSE';
 const UPDATE_PLAY_TIME = 'playlistr/playlist/UPDATE_PLAY_TIME';
 const GET_NEXT_SONG = 'playlistr/playlist/GET_NEXT_SONG';
 const REFRESH_PLAYLIST = 'playlistr/playlist/REFRESH_PLAYLIST';
+const FETCH_PLAYLIST_AUTOCOMPLETE =
+    'playlistr/playlist/FETCH_PLAYLIST_AUTOCOMPLETE';
+
+const SET_PLAYLIST_CREATOR_CATEGORIES =
+    'playlistr/playlist/SET_PLAYLIST_CREATOR_CATEGORIES';
 
 const initialState = {
-    playlists: [],
-    currentPlaylist: {},
     creatingPlaylist: null,
-    createPlaylistError: null,
-    playlistFetchError: null,
+    currentPlaylist: {},
     currentPlaytime: -1,
-    totalTime: 0,
-    paused: true,
     currentSong: '',
+    createPlaylistError: null,
+    paused: true,
+    playlistFilter: 'All',
+    playlists: [],
+    playlistFetchError: null,
+    totalTime: 0,
+    playlistCreatorCategories: [],
 };
 
 export default function playlistReducer(state = initialState, action) {
     const { type, payload } = action;
     switch (type) {
+        case CHANGE_PLAYLIST_FILTER: {
+            return {
+                ...state,
+                playlistFilter: payload,
+            };
+        }
+
+        case SET_PLAYLIST_CREATOR_CATEGORIES: {
+            return {
+                ...state,
+                playlistCreatorCategories: payload,
+            };
+        }
+
         case SET_PLAYLISTS: {
             return {
                 ...state,
@@ -191,6 +214,17 @@ export const getTotalTime = createSelector(
     song => (song ? parseFloat(song.length) : 0)
 );
 
+export const getPlaylistCategories = createSelector(
+    state => state.playlist.playlists,
+    playlists => playlists.map(playlist => playlist.category)
+);
+
+export const getPlaylistByCategory = createSelector(
+    [state => state.playlist.playlists, state => state.playlist.playlistFilter],
+    (playlists, category) => category !== 'All' ? playlists.filter(playlist =>
+        playlist.category === category) : playlists
+);
+
 export function doFetchPlaylists() {
     return {
         type: FETCH_PLAYLISTS,
@@ -211,6 +245,27 @@ export function doFetchPasswordPlaylistByTitle(title, password) {
             title,
             password,
         },
+    };
+}
+
+export function doChangePlaylistFilter(category) {
+    return {
+        type: CHANGE_PLAYLIST_FILTER,
+        payload: category,
+    };
+}
+
+function doSetPlaylistCreatorCategories(categories) {
+    return {
+        type: SET_PLAYLIST_CREATOR_CATEGORIES,
+        payload: categories,
+    };
+}
+
+export function doStartPlaylistAutocomplete(query) {
+    return {
+        type: FETCH_PLAYLIST_AUTOCOMPLETE,
+        payload: query,
     };
 }
 
@@ -400,6 +455,18 @@ export const fetchPasswordPlaylistEpic = (action$, store) =>
             })
             .catch(err => of$(err).map(doSetPlaylistError))
     );
+
+export const fetchPlaylistCategoryAutocompleteEpic = (action$, store) =>
+    action$.ofType(FETCH_PLAYLIST_AUTOCOMPLETE)
+        .switchMap(({ payload }) =>
+            ajax({
+                url: `/playlist/category/${payload}`,
+                responseType: 'json'
+            })
+            .map(response => response.response)
+            .map(({ categories }) => doSetPlaylistCreatorCategories(categories))
+        )
+        .debounceTime(500)
 
 export const goLiveOnPlaylistEpic = (action$, store) =>
     action$.ofType(GO_LIVE_ON_PLAYLIST).switchMap(() =>

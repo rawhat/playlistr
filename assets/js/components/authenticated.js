@@ -19,6 +19,7 @@ const withAuthentication = authStatus => WrappedComponent => {
         }
 
         render = () => {
+            if(this.props.loading) return <p>Loading...</p>;
             return this.props.authStatus === authStatus
                 ? <WrappedComponent {...this.props} />
                 : <Redirect to={authStatus ? '/login' : '/'} />;
@@ -26,8 +27,9 @@ const withAuthentication = authStatus => WrappedComponent => {
     }
 
     const mapStateToProps = state => ({
+        authStatus: state.auth.authStatus,
+        loading: state.auth.isLoading,
         user: state.auth.user,
-        authStatus: state.auth.authStatus
     });
 
     return connect(mapStateToProps, { authCheck: doAuthCheck })(App);

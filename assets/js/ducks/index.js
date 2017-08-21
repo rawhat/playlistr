@@ -20,6 +20,7 @@ import {
     pausePlaylistEpic,
     getNextSongEpic,
     refreshPlaylistEpic,
+    fetchPlaylistCategoryAutocompleteEpic,
 } from './playlist';
 
 import {
@@ -44,7 +45,8 @@ export const rootEpic = combineEpics(
     addSongEpic,
     pausePlaylistEpic,
     getNextSongEpic,
-    refreshPlaylistEpic
+    refreshPlaylistEpic,
+    fetchPlaylistCategoryAutocompleteEpic
 );
 
 export default combineReducers({

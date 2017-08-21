@@ -76,9 +76,9 @@ defmodule Playlistr.Web.PlaylistController do
                         password: "#{playlist.password}",
                         openSubmissions: #{playlist.open_submissions},
                         type: "#{playlist.type}",
-                        length: "#{playlist.length}",
+                        length: #{playlist.length},
                         isPaused: #{playlist.is_paused},
-                        startDate: "#{playlist.start_date}",
+                        startDate: null,
                         currentTime: #{playlist.current_time},
                         hasPlayed: #{playlist.has_played}
                     }) RETURN p AS playlist
@@ -144,5 +144,52 @@ defmodule Playlistr.Web.PlaylistController do
             _ ->
                 json conn, %{ :error => "Invalid parameters." }
         end
+    end
+
+    def category(conn, _params) do
+      query = """
+        MATCH (p:Playlist)
+        RETURN p.category AS category
+      """
+
+      case Bolt.query(Bolt.conn, query) do
+        {:ok, []} ->
+          conn
+          |> put_status(200)
+          |> json(%{ :categories => []})
+
+        {:ok, results} ->
+          IO.inspect results
+          categories = results |> Enum.map(&(&1["category"]))
+
+          conn
+          |> put_status(200)
+          |> json(%{ :categories => categories })
+
+        {:err, _} ->
+          conn
+          |> put_status(404)
+          |> json(%{ :error => "Error fetching categories" })
+      end
+    end
+
+    def category_query(conn, %{ "query" => query } = params) do
+      query = """
+        MATCH (p:Playlist)
+        WHERE p.category =~ '.*#{query}.*'
+        RETURN p.category AS category
+      """
+
+      case Bolt.query(Bolt.conn, query) do
+        {:ok, results} ->
+          conn
+          |> put_status(200)
+          |> json(%{ :categories => (results |> Enum.map(&(&1["category"])))})
+
+        {:err, _} ->
+          conn
+          |> put_status(400)
+          |> json(%{ :error => "Error fetching categories" })
+      end
     end
 end

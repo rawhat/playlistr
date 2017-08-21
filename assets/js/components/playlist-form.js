@@ -1,6 +1,9 @@
 import React, { Component } from 'react';
+import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { Form, FormGroup, Col } from 'react-bootstrap';
+
+import { doStartPlaylistAutocomplete } from '../ducks/playlist';
 
 class PlaylistForm extends Component {
     constructor(props) {
@@ -62,8 +65,15 @@ class PlaylistForm extends Component {
                             placeholder="Playlist category"
                             required
                             value={this.props.playlistCategory}
+                            onInput={(e) => this.props.fetchCategories(e.target.value)}
                             onChange={this.handleChange}
+                            list="categories"
                         />
+                        <datalist id="categories">
+                        {this.props.playlistCreatorCategories.map(category =>
+                            <option key={category} value={category} />
+                        )}
+                        </datalist>
                     </Col>
                 </FormGroup>
                 <FormGroup>
@@ -150,4 +160,8 @@ class PlaylistForm extends Component {
     };
 }
 
-export default PlaylistForm;
+const mapStateToProps = (state) => ({
+    playlistCreatorCategories: state.playlist.playlistCreatorCategories
+});
+
+export default connect(mapStateToProps, { fetchCategories: doStartPlaylistAutocomplete })(PlaylistForm);
