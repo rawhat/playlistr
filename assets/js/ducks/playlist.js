@@ -39,9 +39,10 @@ const GET_NEXT_SONG = 'playlistr/playlist/GET_NEXT_SONG';
 const REFRESH_PLAYLIST = 'playlistr/playlist/REFRESH_PLAYLIST';
 const FETCH_PLAYLIST_AUTOCOMPLETE =
     'playlistr/playlist/FETCH_PLAYLIST_AUTOCOMPLETE';
-
 const SET_PLAYLIST_CREATOR_CATEGORIES =
     'playlistr/playlist/SET_PLAYLIST_CREATOR_CATEGORIES';
+const CLEAR_PLAYLIST_CATEGORY_FILTER =
+    'playlistr/playlist/CLEAR_PLAYLIST_CATEGORY_FILTER';
 
 const initialState = {
     creatingPlaylist: null,
@@ -71,6 +72,13 @@ export default function playlistReducer(state = initialState, action) {
             return {
                 ...state,
                 playlistCreatorCategories: payload,
+            };
+        }
+
+        case CLEAR_PLAYLIST_CATEGORY_FILTER: {
+            return {
+                ...state,
+                playlistCreatorCategories: [],
             };
         }
 
@@ -269,6 +277,12 @@ export function doStartPlaylistAutocomplete(query) {
     };
 }
 
+function doClearPlaylistCategoryFilter() {
+    return {
+        type: CLEAR_PLAYLIST_CATEGORY_FILTER,
+    };
+}
+
 export function doSetPlaylists(playlists) {
     return {
         type: SET_PLAYLISTS,
@@ -456,16 +470,30 @@ export const fetchPasswordPlaylistEpic = (action$, store) =>
             .catch(err => of$(err).map(doSetPlaylistError))
     );
 
+//export const fetchPlaylistCategoryAutocompleteEpic = (action$, store) =>
+//    action$.ofType(FETCH_PLAYLIST_AUTOCOMPLETE)
+//        .filter(({ payload }) => !!payload)
+//        .switchMap(({ payload }) =>
+//            ajax({
+//                url: `/playlist/category/${payload}`,
+//                responseType: 'json'
+//            })
+//            .map(response => response.response)
+//            .map(({ categories }) => doSetPlaylistCreatorCategories(categories))
+//        )
+//        .debounceTime(500)
+
 export const fetchPlaylistCategoryAutocompleteEpic = (action$, store) =>
     action$.ofType(FETCH_PLAYLIST_AUTOCOMPLETE)
-        .switchMap(({ payload }) =>
-            ajax({
+        .switchMap(({ payload }) => {
+            if(!payload) return of$(doClearPlaylistCategoryFilter());
+            return ajax({
                 url: `/playlist/category/${payload}`,
                 responseType: 'json'
             })
             .map(response => response.response)
             .map(({ categories }) => doSetPlaylistCreatorCategories(categories))
-        )
+        })
         .debounceTime(500)
 
 export const goLiveOnPlaylistEpic = (action$, store) =>
