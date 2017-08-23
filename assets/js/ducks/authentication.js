@@ -21,10 +21,8 @@ const initialState = {
 
 export default function authenticationReducer(state = initialState, action) {
     const { type, payload } = action;
-    console.log('handling', type);
     switch (type) {
-        case AUTH_CHECK_LOADING: {
-            console.log('in here?')
+        case CHECK_AUTH_STATUS: {
             return {
                 ...state,
                 isLoading: true
@@ -74,6 +72,7 @@ export default function authenticationReducer(state = initialState, action) {
                 ...state,
                 authStatus: false,
                 user: null,
+                isLoading: false,
             };
         }
 
@@ -99,13 +98,6 @@ export function doSignup(username, email, password, password_repeat) {
             password,
             password_repeat,
         },
-    };
-}
-
-function doAuthLoading() {
-    console.log('this is firing?');
-    return {
-        type: AUTH_CHECK_LOADING,
     };
 }
 
@@ -166,16 +158,16 @@ export const userLoginEpic = action$ =>
 //  -> success:  user to payload, authStatus true, isLoading false
 //  -> failure:  signupError to payload
 export const userSignupEpic = action$ =>
-    action$.ofType(SIGNUP_USER).switchMap(({ payload }) =>
+    action$.ofType(SIGNUP_USER).flatMap(({ payload }) =>
         ajax({
             url: '/signup',
             body: payload,
             method: 'POST',
             responseType: 'json',
         })
-            .map(res => res.response)
-            .map(doSetUser)
-            .catch(err => of$(err).map(doSignupError))
+        .map(res => res.response)
+        .map(doSetUser)
+        .catch(err => of$(err).map(doSignupError))
     );
 
 // check status flow
@@ -187,9 +179,9 @@ export const userCheckAuthEpic = action$ =>
         .ofType(CHECK_AUTH_STATUS)
         .switchMap(() =>
             ajax({ url: '/authenticated', responseType: 'json' })
-                .map(response => response.response)
-                .map(doSetUser)
-                .catch(err => of$(err).map(doSignOutUser))
+            .map(response => response.response)
+            .map(doSetUser)
+            .catch(err => of$(err).map(doSignOutUser))
         );
 
 // sign out flow
