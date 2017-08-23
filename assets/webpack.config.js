@@ -6,9 +6,9 @@ module.exports = {
     main: './elm/index.js',
   },
   output: {
-    path: path.resolve(__dirname, '/priv/static'),
+    path: path.resolve(__dirname, '/static'),
     filename: 'js/[name].js',
-    publicPath: 'http://localhost:8080/',
+    publicPath: 'http://192.168.125.104:8080/',
   },
   devServer: {
     headers: {
@@ -33,8 +33,11 @@ module.exports = {
     new CopyWebpackPlugin([
       {
         from: './static',
-        to: path.resolve(__dirname, '../priv/static'),
+        to: path.resolve(__dirname, '../static'),
       },
     ]),
   ],
+  resolve: {
+    modules: [ "node_modules", __dirname + "/web/static/js", __dirname + "/deps" ]
+  }
 };

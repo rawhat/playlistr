@@ -12,7 +12,7 @@ config :playlistr, Playlistr.Web.Endpoint,
   code_reloader: true,
   check_origin: false,
   # watchers: [node: ["node_modules/.bin/webpack-dev-server", "--inline", "--colors", "--hot", "--stdin", "--host", "localhost", "--port", "8080", "--public", "localhost:8080",
-  watchers: [node: ["node_modules/webpack-dev-server/bin/webpack-dev-server.js", "--inline", "--colors", "--hot", "--stdin", "--host", "localhost", "--port", "8080", "--public", "localhost:8080",
+  watchers: [node: ["node_modules/webpack-dev-server/bin/webpack-dev-server.js", "--inline", "--colors", "--hot", "--stdin", "--host", "0.0.0.0", "--port", "8080", "--public", "0.0.0.0:8080",
     cd: Path.expand("../assets", __DIR__)
   ]]
 
@@ -52,7 +52,7 @@ config :phoenix, :stacktrace_depth, 20
 
 config :bolt_sips, Bolt,
   hostname: 'localhost',
-  basic_auth: [username: "neo4j", password: "Password12"],
+  basic_auth: [username: "neo4j", password: "helloWorld"],
   port: 7687,
   pool_size: 10,
   max_overflow: 5

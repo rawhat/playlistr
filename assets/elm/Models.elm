@@ -16,13 +16,12 @@ type alias PlaylistHolder =
 type alias Playlist =
     { type_ : String
     , title : String
-    , password : String
+    , hasPassword : Bool
     , openSubmissions : Bool
     , length : Int
     , isPaused : Bool
     , hasPlayed : Bool
     , currentTime : Int
-    , currentSongIndex : Int
     , category : String
     , songs : List Song
     }
@@ -50,6 +49,7 @@ type alias Model =
     , currentPlaytime : Float
     , currentSongUrl : String
     , paused : Bool
+    , playlistCategoryFilter : String
     , playlists : WebData Playlists
     , selectedPlaylist : String
     , username : Maybe String
@@ -66,6 +66,7 @@ initialModel =
         0.0
         ""
         False
+        "All"
         RemoteData.NotAsked
         ""
         Nothing

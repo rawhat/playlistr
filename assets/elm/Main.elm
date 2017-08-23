@@ -1,22 +1,15 @@
 module Main exposing (..)
 
 -- import Http
-
-import Html exposing (..)
-import RemoteData exposing (WebData)
-
-
 -- import Html.Attributes exposing (..)
 -- import Html.Events exposing (..)
-
-import Commands exposing (fetchPlaylists, fetchPlaylistByTitle, goLiveOnPlaylist)
-import Msgs exposing (..)
-import Models exposing (Playlist)
-
-
 -- import RemoteData exposing (WebData)
 
-import Models exposing (Model, Playlists, initialModel)
+import Commands exposing (fetchPlaylistByTitle, fetchPlaylists, goLiveOnPlaylist)
+import Html exposing (..)
+import Models exposing (Model, Playlist, Playlists, initialModel)
+import Msgs exposing (..)
+import RemoteData exposing (WebData)
 import Views exposing (..)
 
 
@@ -38,10 +31,13 @@ update msg model =
     case msg of
         FetchPlaylists response ->
             let
+                _ =
+                    Debug.log "response" response
+
                 updatedModel =
                     { model | playlists = response }
             in
-                ( updatedModel, Cmd.none )
+            ( updatedModel, Cmd.none )
 
         FetchPasswordPlaylist username password ->
             ( model, Cmd.none )
@@ -51,7 +47,7 @@ update msg model =
                 updatedModel =
                     { model | addSongUrl = url }
             in
-                ( updatedModel, Cmd.none )
+            ( updatedModel, Cmd.none )
 
         AddSongUrl ->
             let
@@ -64,12 +60,12 @@ update msg model =
                 _ =
                     Debug.log "url" url
             in
-                ( updatedModel, Cmd.none )
+            ( updatedModel, Cmd.none )
 
         AdjustVolume vol ->
             let
                 volume =
-                    case (String.toInt vol) of
+                    case String.toInt vol of
                         Ok num ->
                             num
 
@@ -79,7 +75,10 @@ update msg model =
                 updatedModel =
                     { model | volume = volume }
             in
-                ( updatedModel, Cmd.none )
+            ( updatedModel, Cmd.none )
+
+        ChangePlaylistFilter filter ->
+            ( { model | playlistCategoryFilter = filter }, Cmd.none )
 
         StartFetchPlaylist title ->
             ( model, fetchPlaylistByTitle title )
@@ -88,19 +87,7 @@ update msg model =
             ( model, goLiveOnPlaylist title )
 
         FetchPlaylist response ->
-            let
-                selectedPlaylist =
-                    case response of
-                        RemoteData.Success res ->
-                            res.title
-
-                        _ ->
-                            ""
-
-                updatedModel =
-                    { model | currentPlaylist = response, selectedPlaylist = selectedPlaylist }
-            in
-                ( updatedModel, Cmd.none )
+            ( { model | currentPlaylist = response }, Cmd.none )
 
         GoLive response ->
             let
@@ -114,12 +101,12 @@ update msg model =
                                 time =
                                     res.time
                             in
-                                { model | currentSongUrl = song, currentPlaytime = time }
+                            { model | currentSongUrl = song, currentPlaytime = time }
 
                         _ ->
                             model
             in
-                ( newModel, Cmd.none )
+            ( newModel, Cmd.none )
 
         _ ->
             ( model, Cmd.none )
@@ -131,5 +118,5 @@ main =
         { init = init
         , view = Views.mainView
         , update = update
-        , subscriptions = (\_ -> Sub.none)
+        , subscriptions = \_ -> Sub.none
         }

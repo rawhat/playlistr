@@ -99,9 +99,13 @@ defmodule Playlistr.Music do
                             {l, l ++ newSong}
                     end
                 end)
+
+                newList = newList
+                |> Map.put(:hasPassword, (Map.get(newList, "password", "") != ""))
+                |> Map.delete("password")
+
                 {list, newList}
             end)
-
             newMap
         end)
         |> Map.values

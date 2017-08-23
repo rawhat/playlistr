@@ -3,28 +3,33 @@ module Commands exposing (..)
 import Http
 import Json.Decode as Decode
 import Json.Decode.Pipeline exposing (decode, optional, required)
-import RemoteData
-import Models exposing (LiveData, Playlist, Playlists, PlaylistHolder, Song)
+import Models exposing (LiveData, Playlist, PlaylistHolder, Playlists, Song)
 import Msgs exposing (Msg)
+import RemoteData
+
+
+urlBase : String
+urlBase =
+    "http://192.168.125.104:4000/"
 
 
 fetchPlaylists : Cmd Msg
 fetchPlaylists =
-    Http.get "http://localhost:4000/playlist" playlistsDecoder
+    Http.get (urlBase ++ "playlist") playlistsDecoder
         |> RemoteData.sendRequest
         |> Cmd.map Msgs.FetchPlaylists
 
 
 fetchPlaylistByTitle : String -> Cmd Msg
 fetchPlaylistByTitle title =
-    Http.get ("http://localhost:4000/playlist?playlist=" ++ title) playlistDecoder
+    Http.get (urlBase ++ "playlist?playlist=" ++ title) playlistDecoder
         |> RemoteData.sendRequest
         |> Cmd.map Msgs.FetchPlaylist
 
 
 goLiveOnPlaylist : String -> Cmd Msg
 goLiveOnPlaylist title =
-    Http.get ("http://localhost:4000/song?playlist=" ++ title) liveDataDecoder
+    Http.get (urlBase ++ "song?playlist=" ++ title) liveDataDecoder
         |> RemoteData.sendRequest
         |> Cmd.map Msgs.GoLive
 
@@ -53,13 +58,12 @@ playlistDecoder =
     decode Playlist
         |> required "type" Decode.string
         |> required "title" Decode.string
-        |> required "password" Decode.string
+        |> required "hasPassword" Decode.bool
         |> required "openSubmissions" Decode.bool
         |> required "length" Decode.int
         |> required "isPaused" Decode.bool
         |> required "hasPlayed" Decode.bool
         |> required "currentTime" Decode.int
-        |> required "currentSongIndex" Decode.int
         |> required "category" Decode.string
         |> required "songs" (Decode.list songDecoder)
 

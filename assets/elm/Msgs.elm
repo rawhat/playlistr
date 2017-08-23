@@ -1,7 +1,7 @@
 module Msgs exposing (..)
 
+import Models exposing (LiveData, Playlist, PlaylistHolder, Playlists)
 import Navigation
-import Models exposing (LiveData, Playlist, Playlists, PlaylistHolder)
 import RemoteData exposing (WebData)
 
 
@@ -19,3 +19,4 @@ type Msg
     | AdjustVolume String
     | StartGoLive String
     | GoLive (WebData LiveData)
+    | ChangePlaylistFilter String

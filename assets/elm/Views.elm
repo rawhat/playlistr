@@ -1,29 +1,29 @@
 module Views exposing (..)
 
-import Html exposing (..)
-import Html.Attributes exposing (..)
-import Html.Events exposing (onClick, onInput)
 import Css
     exposing
         ( absolute
         , asPairs
         , backgroundColor
         , borderRadius
-        , marginTop
         , marginLeft
         , marginRight
+        , marginTop
         , paddingBottom
         , paddingRight
         , pct
-        , px
         , position
+        , px
         , relative
         , right
         , top
         )
-import Models exposing (Model, Playlists, Playlist)
-import RemoteData exposing (WebData)
+import Html exposing (..)
+import Html.Attributes exposing (..)
+import Html.Events exposing (onClick, onInput)
+import Models exposing (Model, Playlist, Playlists)
 import Msgs exposing (Msg)
+import RemoteData exposing (WebData)
 
 
 styles : List Css.Style -> Attribute msg
@@ -81,20 +81,20 @@ navBar model =
                 Nothing ->
                     text ""
     in
-        nav [ class "navbar navbar-default navbar-fixed-top " ]
-            [ div [ class "container-fluid" ]
-                [ div [ class "navbar-header" ]
-                    [ div [ class "navbar-brand" ]
-                        [ a [ href "/" ] [ text "Playlistr" ]
-                        , userSection
-                        ]
+    nav [ class "navbar navbar-default navbar-fixed-top " ]
+        [ div [ class "container-fluid" ]
+            [ div [ class "navbar-header" ]
+                [ div [ class "navbar-brand" ]
+                    [ a [ href "/" ] [ text "Playlistr" ]
+                    , userSection
                     ]
                 ]
             ]
+        ]
 
 
-playlistList : WebData Playlists -> String -> Html Msg
-playlistList response selectedPlaylist =
+playlistList : WebData Playlists -> String -> String -> Html Msg
+playlistList response selectedPlaylist categoryFilter =
     case response of
         RemoteData.NotAsked ->
             text ""
@@ -105,21 +105,33 @@ playlistList response selectedPlaylist =
         RemoteData.Success playlists ->
             let
                 content =
-                    if (List.length playlists.playlists) == 0 then
+                    if List.length playlists.playlists == 0 then
                         [ div [ class "panel panel-default" ]
                             [ div [ class "panel-body" ]
                                 [ text "There's nothing here yet" ]
                             ]
                         ]
                     else
-                        (List.map
+                        let
+                            filteredPlaylists =
+                                case categoryFilter of
+                                    "All" ->
+                                        playlists.playlists
+
+                                    filter ->
+                                        List.filter
+                                            (\playlist ->
+                                                playlist.category == filter
+                                            )
+                                            playlists.playlists
+                        in
+                        List.map
                             (\playlist ->
                                 playlistEntry playlist (playlist.title == selectedPlaylist)
                             )
-                            playlists.playlists
-                        )
+                            filteredPlaylists
             in
-                ul [ class "list-group" ] content
+            ul [ class "list-group" ] content
 
         RemoteData.Failure error ->
             text "Error loading playlists."
@@ -129,8 +141,20 @@ playlistSidebar : Model -> Html Msg
 playlistSidebar model =
     div []
         [ playlistCreator model
-        , playlistList model.playlists model.selectedPlaylist
+        , playlistCategoryFilter model
+        , playlistList model.playlists model.selectedPlaylist model.playlistCategoryFilter
         ]
+
+
+playlistCategoryFilter : Model -> Html Msg
+playlistCategoryFilter model =
+    select [ class "form-control", onInput Msgs.ChangePlaylistFilter ]
+        (List.map
+            (\opt ->
+                option [] [ text opt ]
+            )
+            [ "All", "random", "other" ]
+        )
 
 
 playlistCreator : Model -> Html Msg
@@ -143,27 +167,27 @@ playlistEntry playlist selected =
     let
         buttonStyle =
             if selected then
-                [ styles [ (backgroundColor (Css.hex "375a7f")) ] ]
+                [ styles [ backgroundColor (Css.hex "375a7f") ] ]
             else
                 []
 
         passwordIcon =
-            if playlist.password /= "" then
+            if playlist.hasPassword then
                 span [ class "glyphicon glyphicon-lock", styles [ paddingRight (px 5) ] ] []
             else
                 text ""
     in
-        button
-            (buttonStyle
-                ++ [ type_ "button"
-                   , class "list-group-item playlist-selector"
-                   , id playlist.title
-                   , onClick (Msgs.StartFetchPlaylist playlist.title)
-                   ]
-            )
-            [ text playlist.title
-            , div [ class "pull-right" ] [ passwordIcon ]
-            ]
+    button
+        (buttonStyle
+            ++ [ type_ "button"
+               , class "list-group-item playlist-selector"
+               , id playlist.title
+               , onClick (Msgs.StartFetchPlaylist playlist.title)
+               ]
+        )
+        [ text playlist.title
+        , div [ class "pull-right" ] [ passwordIcon ]
+        ]
 
 
 addSongArea : Model -> Html Msg
@@ -175,11 +199,11 @@ addSongArea model =
                 , type_ "text"
                 , placeholder "Add song to current playlist"
                 , onInput Msgs.ChangeSongUrl
-                , value (model.addSongUrl)
+                , value model.addSongUrl
                 ]
                 []
             , div [ class "input-group-btn" ]
-                [ button [ class "btn btn-default", (onClick Msgs.AddSongUrl) ] [ text "+" ] ]
+                [ button [ class "btn btn-default", onClick Msgs.AddSongUrl ] [ text "+" ] ]
             ]
         ]
 
@@ -229,24 +253,30 @@ contentSection model =
                     , songArea playlist
                     ]
 
+        RemoteData.Loading ->
+            text "Loading"
+
         _ ->
             text ""
 
 
 songArea : Playlist -> Html Msg
 songArea playlist =
-    div []
-        (List.map
-            (\song ->
-                playlistSong
-                    song.info
-                    song.length
-                    ((song.index == playlist.currentSongIndex)
-                        && (not playlist.isPaused)
+    case List.length playlist.songs of
+        0 ->
+            div [ class "well well-md" ] [ text "There's nothing here.  Add songs to start this playlist!" ]
+
+        _ ->
+            div []
+                (List.map
+                    (\song ->
+                        playlistSong
+                            song.info
+                            song.length
+                            (not playlist.isPaused)
                     )
-            )
-            playlist.songs
-        )
+                    playlist.songs
+                )
 
 
 playlistSong : String -> Int -> Bool -> Html Msg
@@ -259,19 +289,19 @@ playlistSong info length selected =
                 text ""
 
         mins =
-            floor ((toFloat length) / 60)
+            floor (toFloat length / 60)
 
         seconds =
             length - (mins * 60)
 
         secs =
             if seconds < 10 then
-                "0" ++ (toString seconds)
+                "0" ++ toString seconds
             else
                 toString seconds
 
         time =
-            (toString mins) ++ ":" ++ secs
+            toString mins ++ ":" ++ secs
 
         -- add in local state?
         hiddenContent =
@@ -288,14 +318,14 @@ playlistSong info length selected =
         --     ]
         -- ]
     in
-        div [ class "panel panel-default" ]
-            [ div [ class "panel-heading" ]
-                [ h4 [ class "panel-title pull-left" ] [ text info ]
-                , playingIcon
-                , div [ class "clearfix" ] []
-                ]
-            , hiddenContent
+    div [ class "panel panel-default" ]
+        [ div [ class "panel-heading" ]
+            [ h4 [ class "panel-title pull-left" ] [ text info ]
+            , playingIcon
+            , div [ class "clearfix" ] []
             ]
+        , hiddenContent
+        ]
 
 
 videoPlayer : Model -> Html Msg
@@ -346,26 +376,26 @@ videoPlayer model =
                 _ ->
                     text ""
     in
-        div []
-            [ div [ class "row" ]
-                [ videoTag ]
-            , div [ class "row", style [ ( "margin", "20px auto" ) ] ]
-                [ div [ class "col-md-3" ]
-                    [ div [ class "btn-group" ]
-                        [ button [ class "btn btn-primary", onClick (Msgs.RewindVideo 30) ]
-                            [ span [ class "glyphicon glyphicon-fast-backward" ] [] ]
-                        , button [ class "btn btn-primary", onClick (Msgs.RewindVideo 15) ]
-                            [ span [ class "glyphicon glyphicon-backward" ] [] ]
-                        , button [ class "btn btn-primary", onClick (Msgs.PauseMedia) ]
-                            [ playPauseButton ]
-                        ]
+    div []
+        [ div [ class "row" ]
+            [ videoTag ]
+        , div [ class "row", style [ ( "margin", "20px auto" ) ] ]
+            [ div [ class "col-md-3" ]
+                [ div [ class "btn-group" ]
+                    [ button [ class "btn btn-primary", onClick (Msgs.RewindVideo 30) ]
+                        [ span [ class "glyphicon glyphicon-fast-backward" ] [] ]
+                    , button [ class "btn btn-primary", onClick (Msgs.RewindVideo 15) ]
+                        [ span [ class "glyphicon glyphicon-backward" ] [] ]
+                    , button [ class "btn btn-primary", onClick Msgs.PauseMedia ]
+                        [ playPauseButton ]
                     ]
-                , div [ class "col-md-7" ]
-                    [ currentProgressBar ]
-                , div [ class "col-md-2" ]
-                    [ volumeControl model ]
                 ]
+            , div [ class "col-md-7" ]
+                [ currentProgressBar ]
+            , div [ class "col-md-2" ]
+                [ volumeControl model ]
             ]
+        ]
 
 
 progressBar : Playlist -> Html Msg
@@ -373,9 +403,9 @@ progressBar playlist =
     let
         barWidth =
             if playlist.length == 0 then
-                (pct 0)
+                pct 0
             else
-                (pct ((toFloat playlist.currentTime) / ((toFloat playlist.length) * 100)))
+                pct (toFloat playlist.currentTime / (toFloat playlist.length * 100))
 
         currTimeString =
             "0"
@@ -383,33 +413,33 @@ progressBar playlist =
         totalTimeString =
             "100"
     in
-        div
+    div
+        [ styles
+            [ backgroundColor (Css.hex "a9a9a9")
+            , borderRadius (px 3)
+            , top (px 3)
+            , Css.width (pct 100)
+            , Css.height (px 45)
+            ]
+        ]
+        [ div
             [ styles
-                [ backgroundColor (Css.hex "a9a9a9")
+                [ backgroundColor (Css.hex "375a7f")
                 , borderRadius (px 3)
-                , top (px 3)
-                , Css.width (pct 100)
+                , Css.width barWidth
                 , Css.height (px 45)
                 ]
             ]
-            [ div
-                [ styles
-                    [ backgroundColor (Css.hex "375a7f")
-                    , borderRadius (px 3)
-                    , Css.width barWidth
-                    , Css.height (px 45)
-                    ]
+            []
+        , div
+            [ styles
+                [ position absolute
+                , top (px 12)
+                , right (px 20)
                 ]
-                []
-            , div
-                [ styles
-                    [ position absolute
-                    , top (px 12)
-                    , right (px 20)
-                    ]
-                ]
-                [ text (currTimeString ++ " / " ++ totalTimeString) ]
             ]
+            [ text (currTimeString ++ " / " ++ totalTimeString) ]
+        ]
 
 
 volumeControl : Model -> Html Msg
