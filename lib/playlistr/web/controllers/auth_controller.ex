@@ -7,8 +7,6 @@ defmodule Playlistr.Web.AuthController do
     use Phoenix.Controller
     alias Playlistr.User, as: User
 
-    alias Bolt.Sips, as: Bolt
-
     def auth_test(conn, _params) do
         try do
             conn = conn |> fetch_session
@@ -27,7 +25,7 @@ defmodule Playlistr.Web.AuthController do
                             conn
                             |> put_status(:unauthorized)
                             |> json(%{ :error => "Unauthorized" })
-                            
+
                         user ->
                             conn
                             |> put_status(:ok)
@@ -35,11 +33,10 @@ defmodule Playlistr.Web.AuthController do
                     end
             end
 
-        rescue
-            _ -> 
-                conn 
-                |> put_status(:unauthorized)
-                |> json(%{})
+        rescue _ ->
+            conn
+            |> put_status(:unauthorized)
+            |> json(%{})
         end
     end
 
@@ -76,8 +73,7 @@ defmodule Playlistr.Web.AuthController do
             |> put_status(:ok)
             |> redirect(to: "/")
 
-        rescue
-            _ ->
+        rescue _ ->
                 conn
                 |> put_status(:ok)
                 |> redirect(to: "/")

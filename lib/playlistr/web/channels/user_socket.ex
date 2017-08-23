@@ -5,6 +5,7 @@ defmodule Playlistr.Web.UserSocket do
   # channel "room:*", Playlistr.Web.RoomChannel
   channel "playlist:*", Playlistr.PlaylistChannel
   channel "playlists:*", Playlistr.PlaylistsChannel
+  channel "playlist:chat:*", Playlistr.ChatChannel
 
   ## Transports
   transport :websocket, Phoenix.Transports.WebSocket

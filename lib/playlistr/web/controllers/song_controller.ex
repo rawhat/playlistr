@@ -7,7 +7,8 @@ defmodule Playlistr.Web.SongController do
         case params do
             %{ "playlist" => title } ->
                 cypher = """
-                    MATCH (p:Playlist)-[:HAS]-(s:Song)
+                    MATCH (p:Playlist)
+                    OPTIONAL MATCH (p)-[:HAS]-(s:Song)
                     WHERE p.title = '#{title}'
                     RETURN p AS playlist, s AS songs
                 """
@@ -20,14 +21,18 @@ defmodule Playlistr.Web.SongController do
 
                     {:ok, results} ->
                         %{:song => songData, :startDate => startDate} = results |> Playlistr.Music.get_current_song_and_playtime
+                        IO.inspect startDate
+                        playedUpdate = if songData.time == -1 && startDate != nil, do: "SET p.hasPlayed = true", else: ""
                         case Bolt.query(Bolt.conn, """
                             MATCH (p:Playlist)
                             WHERE p.title = '#{title}'
                             SET p.startDate = #{startDate}
+                            #{playedUpdate}
                             RETURN p AS playlist
                         """) do
                             _ ->
-                                json conn, songData
+                                IO.puts playedUpdate
+                                json conn, (Map.merge songData, %{ hasPlayed: (if playedUpdate == "", do: false, else: true)})
                         end
 
                     {:err, _} ->

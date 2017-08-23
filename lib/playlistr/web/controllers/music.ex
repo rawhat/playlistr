@@ -120,11 +120,12 @@ defmodule Playlistr.Music do
                             song.properties
                     end
                 end) |> Enum.filter(&(&1 != nil))
-                playlist = (hd res)["playlist"].properties
-                # |> Map.get_and_update("password", &(if &1 == "", do: {&1, false}, else: {&1, true}))
+                {_, playlist} = (hd res)["playlist"].properties
+                |> Map.get_and_update("password", &(if &1 == "", do: {&1, false}, else: {&1, true}))
 
                 playlist
-                # |> Map.put(:hasPassword, playlist["password"])
+                |> Map.put(:hasPassword, playlist["password"])
+                |> Map.delete("password")
                 |> Map.merge(%{ :songs => songs })
         end
     end
@@ -160,26 +161,26 @@ defmodule Playlistr.Music do
 
         currentTime = get_current_epoch_time()
 
-        startDate = playlist |> Map.get("startDate", currentTime)
-        startDate = if is_integer(startDate), do: startDate, else: String.to_integer(startDate)
+        start = playlist |> Map.get("startDate", currentTime)
+        startDate = if is_integer(start), do: start, else: String.to_integer(start)
 
         time = playlist |> Map.get("currentTime", 0)
 
         currentTime = time + (currentTime - startDate) / 1000
 
-        songs = results
+        songs = if Map.get((hd results), "songs"), do: results
                 |> Enum.map(&(&1["songs"].properties))
-                |> Enum.sort_by(&(&1["index"]))
+                |> Enum.sort_by(&(&1["index"])), else: []
 
         %{:song => songs
-            |> Enum.reduce_while(%{ :song => nil, :time => -1.0, :length => 0 }, fn song, res ->
+            |> Enum.reduce_while(%{ :song => nil, :time => -1, :length => 0 }, fn song, res ->
 
                 songLength = if is_float(song["length"]), do: song["length"], else: (song["length"] / 1)
 
                 if (res.length + songLength) > currentTime do
                     { :halt, %{ :songUrl => (song |> Map.get("streamUrl")), :time => currentTime - res.length } }
                 else
-                    { :cont, %{ :songUrl => nil, :time => -1.0, :length => res.length + song["length"] } }
+                    { :cont, %{ :songUrl => nil, :time => -1, :length => res.length + song["length"] } }
                 end
             end), :startDate => startDate}
     end
