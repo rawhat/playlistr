@@ -5,7 +5,7 @@ module Main exposing (..)
 -- import Html.Events exposing (..)
 -- import RemoteData exposing (WebData)
 
-import Commands exposing (fetchPlaylistByTitle, fetchPlaylists, goLiveOnPlaylist)
+import Commands exposing (fetchPlaylistByTitle, fetchPlaylistCategories, fetchPlaylists, goLiveOnPlaylist)
 import Html exposing (..)
 import Models exposing (Model, Playlist, Playlists, initialModel)
 import Msgs exposing (..)
@@ -23,31 +23,29 @@ type alias Password =
 
 init : ( Model, Cmd Msg )
 init =
-    ( initialModel, fetchPlaylists )
+    initialModel ! [ fetchPlaylists, fetchPlaylistCategories ]
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         FetchPlaylists response ->
-            let
-                _ =
-                    Debug.log "response" response
-
-                updatedModel =
-                    { model | playlists = response }
-            in
-            ( updatedModel, Cmd.none )
+            ( { model | playlists = response }, Cmd.none )
 
         FetchPasswordPlaylist username password ->
             ( model, Cmd.none )
 
+        FetchPlaylistCategories res ->
+            ( { model | playlistCategories = res }, Cmd.none )
+
         ChangeSongUrl url ->
-            let
-                updatedModel =
-                    { model | addSongUrl = url }
-            in
-            ( updatedModel, Cmd.none )
+            ( { model | addSongUrl = url }, Cmd.none )
+
+        ShowModal ->
+            ( { model | modalShowing = True }, Cmd.none )
+
+        HideModal ->
+            ( { model | modalShowing = False }, Cmd.none )
 
         AddSongUrl ->
             let

@@ -95,6 +95,13 @@ div#create_playlist_button_area {
   padding-bottom: 10px;
 }
 
+.create-playlist-modal {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    background: lightgray;
+}
+
 .playlist-list-group {
   max-height: calc(100vh - 200px);
   overflow-y: auto;

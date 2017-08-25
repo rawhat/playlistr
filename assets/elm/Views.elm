@@ -20,8 +20,9 @@ import Css
         )
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (onClick, onInput)
-import Models exposing (Model, Playlist, Playlists)
+import Html.Events exposing (onClick, onInput, onWithOptions)
+import Json.Decode as Json
+import Models exposing (Model, Playlist, PlaylistCategories, Playlists)
 import Msgs exposing (Msg)
 import RemoteData exposing (WebData)
 
@@ -67,6 +68,7 @@ mainView model =
                     ]
                 ]
             ]
+        , createPlaylistModal model.modalShowing
         ]
 
 
@@ -141,25 +143,63 @@ playlistSidebar : Model -> Html Msg
 playlistSidebar model =
     div []
         [ playlistCreator model
-        , playlistCategoryFilter model
+        , playlistCategoryFilter model.playlistCategories
         , playlistList model.playlists model.selectedPlaylist model.playlistCategoryFilter
         ]
 
 
-playlistCategoryFilter : Model -> Html Msg
-playlistCategoryFilter model =
-    select [ class "form-control", onInput Msgs.ChangePlaylistFilter ]
-        (List.map
-            (\opt ->
-                option [] [ text opt ]
-            )
-            [ "All", "random", "other" ]
-        )
+playlistCategoryFilter : WebData PlaylistCategories -> Html Msg
+playlistCategoryFilter filters =
+    case filters of
+        RemoteData.Success playlistCategories ->
+            select [ class "form-control", onInput Msgs.ChangePlaylistFilter ]
+                (List.map
+                    (\opt ->
+                        option [] [ text opt ]
+                    )
+                    ([ "All" ] ++ playlistCategories.categories)
+                )
+
+        _ ->
+            text ""
 
 
 playlistCreator : Model -> Html Msg
 playlistCreator model =
-    text "playlistCreator"
+    button
+        [ class "btn btn-primary"
+        , onClick Msgs.ShowModal
+        , styles [ Css.width (pct 80), Css.left (pct 10), position relative, Css.marginBottom (px 10) ]
+        ]
+        [ text "Create Playlist" ]
+
+
+createPlaylistModal : Bool -> Html Msg
+createPlaylistModal showing =
+    let
+        modal =
+            if showing then
+                playlistModal
+            else
+                text ""
+    in
+    modal
+
+
+playlistModal : Html Msg
+playlistModal =
+    div [ class "create-playlist-modal", onClick Msgs.HideModal ]
+        [ div [ class "modal-body", onWithOptions "click" { stopPropagation = True, preventDefault = False } (Json.succeed Msgs.NoOp) ]
+            [ div [ class "panel panel-default" ]
+                [ div [ class "panel-heading" ]
+                    [ h3 [ class "pull-left" ] [ text "New Playlist" ]
+                    , span [ class "glyphicon glyphicon-remove pull-right", onClick Msgs.HideModal, styles [ Css.cursor Css.pointer, Css.fontSize (px 28), marginTop (px 20) ] ] []
+                    , div [ class "clearfix" ] []
+                    ]
+                , div [ class "panel-body" ] []
+                ]
+            ]
+        ]
 
 
 playlistEntry : Playlist -> Bool -> Html Msg

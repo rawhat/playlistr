@@ -3,7 +3,7 @@ module Commands exposing (..)
 import Http
 import Json.Decode as Decode
 import Json.Decode.Pipeline exposing (decode, optional, required)
-import Models exposing (LiveData, Playlist, PlaylistHolder, Playlists, Song)
+import Models exposing (LiveData, Playlist, PlaylistCategories, PlaylistHolder, Playlists, Song)
 import Msgs exposing (Msg)
 import RemoteData
 
@@ -25,6 +25,13 @@ fetchPlaylistByTitle title =
     Http.get (urlBase ++ "playlist?playlist=" ++ title) playlistDecoder
         |> RemoteData.sendRequest
         |> Cmd.map Msgs.FetchPlaylist
+
+
+fetchPlaylistCategories : Cmd Msg
+fetchPlaylistCategories =
+    Http.get (urlBase ++ "playlist/category") playlistCategoryDecoder
+        |> RemoteData.sendRequest
+        |> Cmd.map Msgs.FetchPlaylistCategories
 
 
 goLiveOnPlaylist : String -> Cmd Msg
@@ -66,6 +73,12 @@ playlistDecoder =
         |> required "currentTime" Decode.int
         |> required "category" Decode.string
         |> required "songs" (Decode.list songDecoder)
+
+
+playlistCategoryDecoder : Decode.Decoder PlaylistCategories
+playlistCategoryDecoder =
+    decode PlaylistCategories
+        |> required "categories" (Decode.list Decode.string)
 
 
 songDecoder : Decode.Decoder Song

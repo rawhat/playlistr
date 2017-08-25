@@ -13,6 +13,10 @@ type alias PlaylistHolder =
     { playlist : Playlist }
 
 
+type alias PlaylistCategories =
+    { categories : List String }
+
+
 type alias Playlist =
     { type_ : String
     , title : String
@@ -42,14 +46,20 @@ type alias Song =
     }
 
 
+type alias PlaylistCreatorModal =
+    String
+
+
 type alias Model =
     { addSongError : Bool
     , addSongUrl : String
     , currentPlaylist : WebData Playlist
     , currentPlaytime : Float
     , currentSongUrl : String
+    , modalShowing : Bool
     , paused : Bool
     , playlistCategoryFilter : String
+    , playlistCategories : WebData PlaylistCategories
     , playlists : WebData Playlists
     , selectedPlaylist : String
     , username : Maybe String
@@ -66,7 +76,9 @@ initialModel =
         0.0
         ""
         False
+        False
         "All"
+        RemoteData.NotAsked
         RemoteData.NotAsked
         ""
         Nothing

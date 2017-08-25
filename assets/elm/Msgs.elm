@@ -1,15 +1,17 @@
 module Msgs exposing (..)
 
-import Models exposing (LiveData, Playlist, PlaylistHolder, Playlists)
+import Models exposing (LiveData, Playlist, PlaylistCategories, PlaylistHolder, Playlists)
 import Navigation
 import RemoteData exposing (WebData)
 
 
 type Msg
-    = UrlChange Navigation.Location
+    = NoOp
+    | UrlChange Navigation.Location
     | FetchPlaylists (WebData Playlists)
     | StartFetchPlaylist String
     | FetchPlaylist (WebData Playlist)
+    | FetchPlaylistCategories (WebData PlaylistCategories)
     | FetchPasswordPlaylist String String
     | ChangeActivePlaylist String
     | AddSongUrl
@@ -20,3 +22,5 @@ type Msg
     | StartGoLive String
     | GoLive (WebData LiveData)
     | ChangePlaylistFilter String
+    | ShowModal
+    | HideModal

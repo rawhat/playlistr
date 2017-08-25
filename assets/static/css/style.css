@@ -95,6 +95,29 @@ div#create_playlist_button_area {
   padding-bottom: 10px;
 }
 
+.navbar {
+    z-index: 2;
+}
+
+.create-playlist-modal {
+    z-index: 999;
+    display: flex;
+    position: absolute;
+    align-items: center;
+    justify-content: center;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.25);
+}
+
+.create-playlist-modal > .modal-body {
+    width: 60%;
+    height: 75%;
+
+}
+
 .playlist-list-group {
   max-height: calc(100vh - 200px);
   overflow-y: auto;
