@@ -57,7 +57,7 @@ defmodule Playlistr.Web.SongController do
         case params do
             # Also check openSubmissions / creator? also maybe password?
             # Might not need to check password if they have access to the playlist
-            %{ "title" => title, "type" => type, "songUrl" => songUrl } ->
+            %{ "playlist" => title, "type" => type, "songUrl" => songUrl } ->
                 # remove this
                 creator = "rawhat"
 
@@ -73,25 +73,25 @@ defmodule Playlistr.Web.SongController do
                 end
 
                 case processedLink do
-                    nil ->
+                    {:err, _} ->
                         conn
                         |> put_status(400)
                         |> json(%{ :error => "Invalid type parameter" })
 
-                    link ->
+                    {:ok, link} ->
                         cypher = """
                             MATCH (p:Playlist) WHERE p.title = '#{title}'
                             OPTIONAL MATCH (p)-[r:HAS]-(:Song)
                             WITH p, COUNT(r) AS songCount
-                            CREATE UNIQUE (p)-[:HAS { addedAt: '#{Playlistr.Music.get_current_epoch_time()}' }]->(s:Song {
-                                info: '#{link.info}',
+                            CREATE UNIQUE (p)-[:HAS { addedAt: #{Playlistr.Music.get_current_epoch_time()} }]->(s:Song {
+                                info: '#{link.title}',
                                 isVideo: #{if type == "video", do: true, else: false},
                                 url: '#{link.url}',
-                                length: '#{link.length}',
-                                streamUrl: '#{processedLink}',
+                                length: #{link.length},
+                                streamUrl: '#{link.streamUrl}',
                                 index: songCount
                             })
-                            RETURN p as playlist, s AS song`,
+                            RETURN p as playlist, s AS song
                         """
 
                         case Bolt.query(Bolt.conn, cypher) do
@@ -101,7 +101,7 @@ defmodule Playlistr.Web.SongController do
                                 |> json(%{ :error => "Song not added" })
 
                             {:ok, results} ->
-                                addedSong = results[0]["song"].properties
+                                addedSong = (hd results)["song"].properties
                                 Playlistr.Web.Endpoint.broadcast("playlist:" <> title, "new-song", addedSong)
 
                                 conn

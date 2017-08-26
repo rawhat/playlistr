@@ -8,7 +8,6 @@ defmodule Playlistr.Music do
     end
 
     def convertTime(timeString) do
-        IO.puts(timeString)
         segments = timeString
             |> String.split(":")
             |> Enum.map(fn elem -> String.to_integer(elem) end)
@@ -52,12 +51,12 @@ defmodule Playlistr.Music do
         case System.cmd("youtube-dl", ["-j", url]) do
             ({ data, _ }) ->
                 info = Poison.Parser.parse!(data)
-
+                streamUrl = info["formats"] |> get_best_quality(true)
                 {:ok, %{
-                    "title" => info["fulltitle"],
-                    "url" => url,
-                    "length" => info["duration"],
-                    "streamUrl" => info["formats"] |> get_best_quality(true)
+                    :title => info["fulltitle"],
+                    :url => url,
+                    :length => info["duration"],
+                    :streamUrl => streamUrl
                 }}
 
             _ ->
@@ -71,10 +70,10 @@ defmodule Playlistr.Music do
                 info = Poison.Parser.parse!(data)
 
                 {:ok, %{
-                    "title" => info["fulltitle"],
-                    "url" => url,
-                    "length" => info["duration"],
-                    "streamUrl" => info["formats"] |> get_best_quality(false)
+                    :title => info["fulltitle"],
+                    :url => url,
+                    :length => info["duration"],
+                    :streamUrl => info["formats"] |> get_best_quality(false)
                 }}
             _ ->
                 { :err, "Error in processing" }

@@ -8,8 +8,8 @@ import {
 
 const PlaylistFilterInput = ({ categories, changeFilter }) =>
     <select className='form-control' onChange={(e) => changeFilter(e.target.value)}>
-        {[<option>All</option>].concat(categories.map(category =>
-            <option>{category}</option>
+        {[<option key='All'>All</option>].concat(categories.map((category, index) =>
+            <option key={`${category}-${index}`}>{category}</option>
         ))}
     </select>
 
@@ -17,4 +17,5 @@ const mapStateToProps = (state) => ({
     categories: getPlaylistCategories(state)
 })
 
-export default connect(mapStateToProps, { changeFilter: doChangePlaylistFilter })(PlaylistFilterInput);
+export default connect(mapStateToProps,
+    { changeFilter: doChangePlaylistFilter })(PlaylistFilterInput);

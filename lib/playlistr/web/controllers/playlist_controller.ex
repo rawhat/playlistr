@@ -98,7 +98,7 @@ defmodule Playlistr.Web.PlaylistController do
                             |> Map.delete("password")
 
                         IO.puts "broadcasting new playlist"
-                        Playlistr.Web.Endpoint.broadcast("playlist:lobby", "new-playlist", addedPlaylist)
+                        Playlistr.Web.Endpoint.broadcast("playlists:lobby", "new-playlist", addedPlaylist)
 
                         conn
                         |> put_status(201)

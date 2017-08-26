@@ -28,25 +28,19 @@ function socketMiddleware() {
     let playlistLobby = null;
 
     const onOpen = (ws, store) => () => {
-        console.log('connected!');
         store.dispatch(doSocketConnected());
     };
 
     const onClose = (ws, store) => () => {
-        console.log('disconnected!');
         store.dispatch(doSocketDisconnected());
     };
 
     const onNewPlaylist = (ws, store) => msg => {
-        console.log('new playlist', msg);
-        const { playlist } = msg;
-        store.dispatch(doAddNewPlaylist(playlist));
+        store.dispatch(doAddNewPlaylist(msg));
     };
 
     const onNewSong = (ws, store) => msg => {
-        const { song } = msg;
-        console.log('new song', msg);
-        store.dispatch(doAddNewSongToCurrentPlaylist(song));
+        store.dispatch(doAddNewSongToCurrentPlaylist(msg));
     };
 
     const onNewChatMessage = (ws, store) => msg => {
@@ -67,9 +61,9 @@ function socketMiddleware() {
                     .join()
                     .receive('ok', () => onOpen(socket, store));
 
-                playlistsLobby.on('new-playlist', () =>
-                    onNewPlaylist(socket, store)
-                );
+                playlistsLobby.on('new-playlist', (msg) => {
+                    onNewPlaylist(socket, store)(msg);
+                });
                 break;
             }
 
@@ -81,7 +75,6 @@ function socketMiddleware() {
             }
 
             case PUSH_SOCKET_CHANGE: {
-                console.log('changing to', payload);
                 let { old_playlist, new_playlist } = payload;
 
                 if (old_playlist && playlistLobby) {
@@ -90,15 +83,15 @@ function socketMiddleware() {
 
                 playlistLobby = socket.channel(`playlist:${new_playlist}`);
                 playlistLobby.join().receive('ok', () => {
-                    console.log(`connected to ${new_playlist}`);
                 });
-                playlistLobby.on('new-song', () => onNewSong(socket, store));
+                playlistLobby.on('new-song', (msg) => {
+                    onNewSong(socket, store)(msg);
+                });
 
                 break;
             }
 
             case JOIN_PLAYLIST_CHAT: {
-                console.log('joining playlist chat');
                 if (socket) {
                     let playlistChatChannel = socket.channel(
                         `playlist:chat:${payload}`
