@@ -22,7 +22,7 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick, onInput, onWithOptions)
 import Json.Decode as Json
-import Models exposing (Model, Playlist, PlaylistCategories, Playlists)
+import Models exposing (Model, Playlist, PlaylistCategories, PlaylistCreateModal, Playlists)
 import Msgs exposing (Msg)
 import RemoteData exposing (WebData)
 
@@ -68,7 +68,7 @@ mainView model =
                     ]
                 ]
             ]
-        , createPlaylistModal model.modalShowing
+        , createPlaylistModal model.modalShowing model.createModal
         ]
 
 
@@ -174,20 +174,20 @@ playlistCreator model =
         [ text "Create Playlist" ]
 
 
-createPlaylistModal : Bool -> Html Msg
-createPlaylistModal showing =
+createPlaylistModal : Bool -> PlaylistCreateModal -> Html Msg
+createPlaylistModal showing model =
     let
         modal =
             if showing then
-                playlistModal
+                playlistModal model
             else
                 text ""
     in
     modal
 
 
-playlistModal : Html Msg
-playlistModal =
+playlistModal : PlaylistCreateModal -> Html Msg
+playlistModal modal =
     div [ class "create-playlist-modal", onClick Msgs.HideModal ]
         [ div [ class "modal-body", onWithOptions "click" { stopPropagation = True, preventDefault = False } (Json.succeed Msgs.NoOp) ]
             [ div [ class "panel panel-default" ]
@@ -196,7 +196,29 @@ playlistModal =
                     , span [ class "glyphicon glyphicon-remove pull-right", onClick Msgs.HideModal, styles [ Css.cursor Css.pointer, Css.fontSize (px 28), marginTop (px 20) ] ] []
                     , div [ class "clearfix" ] []
                     ]
-                , div [ class "panel-body" ] []
+                , div [ class "panel-body" ]
+                    [ Html.form []
+                        [ div [ class "form-group" ] [ input [ class "form-control" ] [] ]
+                        , div [ class "form-group" ] [ input [ class "form-control" ] [] ]
+                        , div [ class "form-group" ] [ input [ class "form-control" ] [] ]
+                        , div [ class "form-group" ]
+                            [ div [ class "radio" ]
+                                [ label []
+                                    [ span [ styles [ marginRight (px 30) ] ] [ text "Music" ]
+                                    , input [ type_ "radio", name "playlistType" ] []
+                                    ]
+                                ]
+                            , div [ class "radio" ]
+                                [ label []
+                                    [ span [ styles [ marginRight (px 30) ] ] [ text "Video" ]
+                                    , input [ type_ "radio", name "playlistType" ] []
+                                    ]
+                                ]
+                            ]
+                        , div [ class "form-group" ]
+                            [ input [ type_ "checkbox", class "form-control" ] [] ]
+                        ]
+                    ]
                 ]
             ]
         ]

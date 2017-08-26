@@ -35,6 +35,29 @@ type alias Playlists =
     { playlists : List Playlist }
 
 
+type alias PlaylistCreateModal =
+    { name : String
+    , category : String
+    , password : String
+    , openSubmissions : Bool
+    , type_ : String
+    , hasError : Bool
+    , nameTaken : Bool
+    }
+
+
+initialCreateModal : PlaylistCreateModal
+initialCreateModal =
+    PlaylistCreateModal
+        ""
+        ""
+        ""
+        True
+        "music"
+        False
+        False
+
+
 type alias Song =
     { url : String
     , title : String
@@ -44,10 +67,6 @@ type alias Song =
     , info : String
     , index : Int
     }
-
-
-type alias PlaylistCreatorModal =
-    String
 
 
 type alias Model =
@@ -64,6 +83,7 @@ type alias Model =
     , selectedPlaylist : String
     , username : Maybe String
     , volume : Int
+    , createModal : PlaylistCreateModal
     }
 
 
@@ -83,3 +103,4 @@ initialModel =
         ""
         Nothing
         25
+        initialCreateModal
