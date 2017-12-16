@@ -13,7 +13,7 @@ config :playlistr, Playlistr.Web.Endpoint,
   check_origin: false,
   # watchers: [node: ["node_modules/.bin/webpack-dev-server", "--inline", "--colors", "--hot", "--stdin", "--host", "localhost", "--port", "8080", "--public", "localhost:8080",
   watchers: [node: ["node_modules/webpack-dev-server/bin/webpack-dev-server.js", "--inline", "--colors", "--hot", "--stdin", "--host", "0.0.0.0", "--port", "8080", "--public", "0.0.0.0:8080",
-    cd: Path.expand("../assets", __DIR__)
+    cd: "/app/assets"#Path.expand("/app/assets", __DIR__)
   ]]
 
 # ## SSL Support
